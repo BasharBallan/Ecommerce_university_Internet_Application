@@ -1,3 +1,4 @@
+const path = require("path");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
@@ -56,7 +57,10 @@ Enjoy testing your API!
     security: [{ bearerAuth: [] }],
   },
 
-  apis: ["./routes/*.js"],
+  apis: [
+      path.join(__dirname, "./modules/**/*.js"),
+      path.join(__dirname, "./routes/**/*.js"),
+    ],
 };
 
 const swaggerSpec = swaggerJsDoc(options);

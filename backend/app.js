@@ -9,10 +9,10 @@ const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 
 const langMiddleware = require('./middlewares/langMiddleware');
-// const mountRoutes = require('./routes');
-// const ApiError = require('./utils/apiError');
-// const globalError = require('./middlewares/errorMiddleware');
-// const { getHealthStatus } = require("./services/healthService");
+ const mountRoutes = require('./routes');
+ const ApiError = require('./utils/apiError');
+ const globalError = require('./middlewares/errorMiddleware');
+ const { getHealthStatus } = require("./modules/health/healthService");
 
 // Winston Logging Middlewares
 const correlationId = require("./middlewares/correlationId");
@@ -97,12 +97,12 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // ------------------------------------------------------
 // Mount routes
 // ------------------------------------------------------
-// mountRoutes(app);
+mountRoutes(app);
 
-// // Handle unknown routes
-// app.all('*', (req, res, next) => {
-//   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
-// });
+ // Handle unknown routes
+app.all('*', (req, res, next) => {
+  next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
+ });
 
 // Winston Error Logger
 app.use(errorLogger);
