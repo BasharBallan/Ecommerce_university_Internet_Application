@@ -13,11 +13,8 @@ import {
 } from "@mui/material";
 
 import StoreNavbar from "../components/StoreNavbar";
-import CategoryFilter, {
-  type Category,
-} from "../components/CategoryFilter";
+import CategoryFilter from "../components/CategoryFilter";
 import FeaturedProducts from "../components/FeaturedProducts";
-import type { Product } from "../components/ProductCard";
 import { mockCategories, mockProducts } from "../data/mockData";
 
 // Temporary data source.

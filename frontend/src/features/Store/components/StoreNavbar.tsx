@@ -14,7 +14,7 @@ import {
   ShoppingCartOutlined,
   StorefrontOutlined,
 } from "@mui/icons-material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 
 interface StoreNavbarProps {
   searchValue?: string;
@@ -27,6 +27,7 @@ export default function StoreNavbar({
   onSearchChange = () => {},
   cartItemCount = 0,
 }: StoreNavbarProps) {
+  const navigate = useNavigate();
   return (
     <AppBar
       position="sticky"
@@ -144,8 +145,7 @@ export default function StoreNavbar({
           {/* Shopping cart */}
           <IconButton
             aria-label="Shopping cart"
-            color="primary"
-            sx={{ flexShrink: 0 }}
+            onClick={() => navigate("/cart")}
           >
             <Badge badgeContent={cartItemCount} color="error">
               <ShoppingCartOutlined />
