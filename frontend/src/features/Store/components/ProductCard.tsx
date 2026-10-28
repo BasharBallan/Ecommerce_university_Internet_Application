@@ -1,3 +1,5 @@
+import { ShoppingCartOutlined } from "@mui/icons-material";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import {
   Box,
   Card,
@@ -9,8 +11,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import { useNavigate } from "react-router-dom";
+import { addToCart } from "../CartStore";
 
 export interface Product {
   id: string;
@@ -38,6 +40,11 @@ export default function ProductCard({
   onToggleFavorite,
   isFavorite = false,
 }: ProductCardProps) {
+  const navigate = useNavigate();
+
+  const openProductDetails = () => {
+    navigate(`/products/${product.id}`);
+  };
   const hasDiscount =
     product.discountPrice != null &&
     product.discountPrice >= 0 &&
@@ -58,6 +65,16 @@ export default function ProductCard({
   return (
     <Card
       elevation={0}
+      role="link"
+      tabIndex={0}
+      aria-label={`View details for ${product.name}`}
+      onClick={openProductDetails}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openProductDetails();
+        }
+      }}
       sx={{
         height: "100%",
         display: "flex",
@@ -66,10 +83,16 @@ export default function ProductCard({
         borderColor: "divider",
         borderRadius: 3,
         overflow: "hidden",
+        cursor: "pointer",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: 4,
+        },
+        "&:focus-visible": {
+          outline: "2px solid",
+          outlineColor: "primary.main",
+          outlineOffset: 2,
         },
       }}
     >
@@ -102,10 +125,12 @@ export default function ProductCard({
         )}
 
         <IconButton
-          aria-label={
-            isFavorite ? "Remove from favorites" : "Add to favorites"
-          }
-          onClick={() => onToggleFavorite?.(product)}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          // onClick={() => onToggleFavorite?.(product)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite?.(product);
+          }}
           sx={{
             position: "absolute",
             top: 8,
@@ -114,9 +139,7 @@ export default function ProductCard({
             "&:hover": { bgcolor: "grey.100" },
           }}
         >
-          <FavoriteBorderIcon
-            color={isFavorite ? "error" : "action"}
-          />
+          <FavoriteBorderIcon color={isFavorite ? "error" : "action"} />
         </IconButton>
       </Box>
 
@@ -166,7 +189,7 @@ export default function ProductCard({
           <Stack
             direction="row"
             spacing={0.75}
-            sx={{ mt: 1 , alignItems: "center" }}
+            sx={{ mt: 1, alignItems: "center" }}
           >
             <Rating
               value={product.rating}
@@ -204,7 +227,11 @@ export default function ProductCard({
 
             <Typography
               variant="h6"
-              sx={{ fontSize: "1.1rem", fontWeight: 700 ,color:'primry.main'}}
+              sx={{
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                color: "primary.main",
+              }}
             >
               {formatPrice(
                 hasDiscount ? product.discountPrice! : product.price,
@@ -215,14 +242,17 @@ export default function ProductCard({
           <IconButton
             aria-label={`Add ${product.name} to cart`}
             color="primary"
-            onClick={() => onAddToCart?.(product)}
+            onClick={(event) => {
+              event.stopPropagation();
+              addToCart(product);
+            }}
             sx={{
               border: "1px solid",
               borderColor: "primary.main",
               borderRadius: 2,
             }}
           >
-            <ShoppingCartOutlinedIcon />
+            <ShoppingCartOutlined />
           </IconButton>
         </Stack>
       </CardContent>

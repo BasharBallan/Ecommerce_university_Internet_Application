@@ -94,7 +94,7 @@ export default function LoginPage() {
               fontWeight: 800,
             }}
           >
-            Every Things you Need
+            Every things you need
             <br />
             in one place
           </Typography>
@@ -113,9 +113,9 @@ export default function LoginPage() {
 
           <Stack spacing={2.5} sx={{ mt: 5 }}>
             {[
-              "تصفحي المنتجات بسهولة",
-              "تابعي طلباتك من مكان واحد",
-              "تجربة تسوق بسيطة وآمنة",
+              "Brwose product esaily",
+              "track your orders all in one place",
+              "simple an injoyable experience ",
             ].map((item) => (
               <Stack
                 key={item}
@@ -131,7 +131,7 @@ export default function LoginPage() {
         </Box>
 
         <Typography variant="body2" color="text.secondary">
-          تسوق أسهل، تجربة أفضل.
+          easy shopping , great experience
         </Typography>
       </Box>
 
@@ -166,11 +166,11 @@ export default function LoginPage() {
                   fontWeight: 800,
                 }}
               >
-                أهلاً بعودتك!
+                welcome back!
               </Typography>
 
               <Typography color="text.secondary">
-                سجلي الدخول للمتابعة إلى حسابك.
+                Login to your account.
               </Typography>
             </Box>
 
@@ -178,7 +178,7 @@ export default function LoginPage() {
               <Alert severity="error">
                 {loginMutation.error instanceof Error
                   ? loginMutation.error.message
-                  : "حدث خطأ أثناء تسجيل الدخول. حاولي مجددًا."}
+                  : "some thing wrong try again ."}
               </Alert>
             )}
 
@@ -191,7 +191,7 @@ export default function LoginPage() {
                     <TextField
                       {...field}
                       fullWidth
-                      label="البريد الإلكتروني"
+                      label="email"
                       placeholder="you@example.com"
                       type="email"
                       autoComplete="email"
@@ -222,7 +222,7 @@ export default function LoginPage() {
                     <TextField
                       {...field}
                       fullWidth
-                      label="كلمة المرور"
+                      label="password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       error={Boolean(errors.password)}
@@ -245,8 +245,8 @@ export default function LoginPage() {
                                 edge="end"
                                 aria-label={
                                   showPassword
-                                    ? "إخفاء كلمة المرور"
-                                    : "إظهار كلمة المرور"
+                                    ? "hide password"
+                                    : "show password"
                                 }
                                 onClick={() =>
                                   setShowPassword((value) => !value)
@@ -287,7 +287,7 @@ export default function LoginPage() {
                   {loginMutation.isPending ? (
                     <CircularProgress size={24} color="inherit" />
                   ) : (
-                    "تسجيل الدخول"
+                    "login"
                   )}
                 </Button>
               </Stack>

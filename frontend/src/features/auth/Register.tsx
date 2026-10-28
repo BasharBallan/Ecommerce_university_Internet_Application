@@ -70,11 +70,10 @@ export default function RegisterPage() {
             const response = await registerUser(values);
 
             setSuccessMessage(
-                response.message || "تم إنشاء الحساب بنجاح."
+                response.message || "created ac"
             );
 
-            // التسجيل لا يعني بالضرورة أن المستخدم أصبح مسجلاً للدخول.
-            // ننتظر تحديد سلوك الـ Backend قبل إدارة الجلسة.
+            
             navigate("/login", {
                 state: {
                     registered: true,
@@ -83,7 +82,7 @@ export default function RegisterPage() {
             });
         } catch {
             setServerError(
-                "تعذر إنشاء الحساب. تحققي من البيانات وحاولي مجدداً."
+                "some thing wrong please chick your credentials"
             );
         }
     };
@@ -131,9 +130,9 @@ export default function RegisterPage() {
 
                         }}
                     >
-                        ابدئي تجربة
+                        start your shopping journey
                         <br />
-                        تسوق جديدة.
+                        with ShopEase.
                     </Typography>
 
                     <Typography
@@ -143,17 +142,17 @@ export default function RegisterPage() {
                             lineHeight: 1.9,
                         }}
                     >
-                        أنشئي حسابك لتتمكني من متابعة طلباتك
-                        والاستمتاع بتجربة تسوق أسهل.
+                        create your account to track your orders and enjoy a smoother shopping experience.
+                    
                     </Typography>
                 </Box>
 
                 <Typography variant="body2" color="text.secondary">
-                    تسوق أسهل، تجربة أفضل.
+                    
+          easy shopping , great experience
                 </Typography>
             </Box>
 
-            {/* نموذج التسجيل */}
             <Container
                 maxWidth="sm"
                 sx={{
@@ -177,11 +176,11 @@ export default function RegisterPage() {
                     <Stack spacing={3}>
                         <Box>
                             <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
-                                إنشاء حساب
+                                create your account
                             </Typography>
 
                             <Typography color="text.secondary">
-                                أدخلي بياناتك للبدء بالتسوق.
+                              enter your data to start shopping.
                             </Typography>
                         </Box>
 
@@ -210,7 +209,7 @@ export default function RegisterPage() {
                                         <TextField
                                             {...field}
                                             fullWidth
-                                            label="الاسم الكامل"
+                                            label="full name"
                                             autoComplete="name"
                                             error={Boolean(errors.full_name)}
                                             helperText={errors.full_name?.message}
@@ -235,7 +234,7 @@ export default function RegisterPage() {
                                         <TextField
                                             {...field}
                                             fullWidth
-                                            label="البريد الإلكتروني"
+                                            label="email"
                                             type="email"
                                             autoComplete="email"
                                             error={Boolean(errors.email)}
@@ -262,7 +261,7 @@ export default function RegisterPage() {
                                         <TextField
                                             {...field}
                                             fullWidth
-                                            label="كلمة المرور"
+                                            label="password"
                                             type={showPassword ? "text" : "password"}
                                             autoComplete="new-password"
                                             error={Boolean(errors.password)}
@@ -280,7 +279,7 @@ export default function RegisterPage() {
                                                         <InputAdornment position="end">
                                                             <IconButton
                                                                 type="button"
-                                                                aria-label="إظهار أو إخفاء كلمة المرور"
+                                                                aria-label="hide or show the password"
                                                                 onClick={() =>
                                                                     setShowPassword((value) => !value)
                                                                 }
@@ -305,7 +304,7 @@ export default function RegisterPage() {
                                         <TextField
                                             {...field}
                                             fullWidth
-                                            label="تأكيد كلمة المرور"
+                                            label="password confirmation"
                                             type={
                                                 showConfirmation ? "text" : "password"
                                             }
@@ -322,7 +321,7 @@ export default function RegisterPage() {
                                                         <InputAdornment position="end">
                                                             <IconButton
                                                                 type="button"
-                                                                aria-label="إظهار أو إخفاء تأكيد كلمة المرور"
+                                                                aria-label='hide or show the password'
                                                                 onClick={() =>
                                                                     setShowConfirmation((value) => !value)
                                                                 }
@@ -360,7 +359,7 @@ export default function RegisterPage() {
                                     {isSubmitting ? (
                                         <CircularProgress size={24} color="inherit" />
                                     ) : (
-                                        "إنشاء الحساب"
+                            "create account"
                                     )}
                                 </Button>
                             </Stack>
@@ -372,13 +371,13 @@ export default function RegisterPage() {
                                 color: "text.secondary", textAlign: "center"
                             }}
                         >
-                            لديك حساب بالفعل؟{" "}
+                already have an accountb?{" "}
                             <Link
                                 component={RouterLink}
                                 to="/login"
                                 underline="hover"
                             >
-                                تسجيل الدخول
+                                login
                             </Link>
                         </Typography>
                     </Stack>
