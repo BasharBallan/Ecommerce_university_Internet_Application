@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
+const path = require('path');
 
 const { uploadSingleImage } = require('../../middlewares/uploadImageMiddleware');
 const factory = require('../../utils/handlersFactory');
@@ -15,11 +16,14 @@ exports.resizeProductImage = asyncHandler(async (req, res, next) => {
   if (req.file) {
     const imageCoverFileName = `product-${uuidv4()}-${Date.now()}-cover.jpeg`;
 
+    // Absolute path resolution to prevent 'unable to open for write' errors
+    const outputPath = path.join(__dirname, '../../uploads/products', imageCoverFileName);
+
     await sharp(req.file.buffer)
       .resize(2000, 1333)
       .toFormat('jpeg')
       .jpeg({ quality: 95 })
-      .toFile(`uploads/products/${imageCoverFileName}`);
+      .toFile(outputPath);
 
     req.body.imageCover = imageCoverFileName;
   }

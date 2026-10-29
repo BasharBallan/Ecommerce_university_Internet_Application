@@ -1,7 +1,7 @@
 
 import { useSyncExternalStore } from "react";
 import { mockOrders } from './data/mockOrders';
-import type { Order, OrderItem } from "./types";
+import type { Order, OrderItem, OrderStatus } from "./types";
 
 let orders: Order[] = [...mockOrders];
 
@@ -26,7 +26,28 @@ function notify() {
 export function useOrders() {
   return useSyncExternalStore(subscribe, getSnapshot);
 }
+export function updateMockOrderStatus(
+  orderId: string,
+  status: OrderStatus
+): boolean {
+  const orderExists = orders.some(
+    (order) => order.id === orderId
+  );
 
+  if (!orderExists) {
+    return false;
+  }
+
+  orders = orders.map((order) =>
+    order.id === orderId
+      ? { ...order, status }
+      : order
+  );
+
+  notify();
+
+  return true;
+}
 export function createMockOrder(
   customerId: string,
   items: OrderItem[]
@@ -48,6 +69,7 @@ export function createMockOrder(
     }
   }
 
+  
   const totalAmount = Number(
     items
       .reduce(

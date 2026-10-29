@@ -622,7 +622,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
         correlationId: req.correlationId
       }
     });
-    return next(new ApiError(getMessage("invalid_credentials", req.lang), 401));
+    return next(new ApiError(getMessage("unauthorized", req.lang), 401));
   }
 
   // Check if user still exists

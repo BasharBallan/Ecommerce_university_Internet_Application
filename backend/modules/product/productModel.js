@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const productSchema = new mongoose.Schema(
   {
@@ -11,7 +12,6 @@ const productSchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      required: true,
       lowercase: true,
     },
     description: {
@@ -58,15 +58,6 @@ const productSchema = new mongoose.Schema(
         message: 'Category is not supported',
       },
     },
-    ratingsAverage: {
-      type: Number,
-      min: [1, 'Rating must be above or equal 1.0'],
-      max: [5, 'Rating must be below or equal 5.0'],
-    },
-    ratingsQuantity: {
-      type: Number,
-      default: 0,
-    },
   },
   {
     timestamps: true,
@@ -75,8 +66,16 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+// توليد الـ slug تلقائياً من الـ title قبل الحفظ
+productSchema.pre('save', function (next) {
+  if (this.title && !this.slug) {
+    this.slug = slugify(this.title, { lower: true });
+  }
+  next();
+});
+
 const setImageURL = (doc) => {
-  if (doc.imageCover) {
+  if (doc.imageCover && !doc.imageCover.startsWith('http')) {
     const imageUrl = `${process.env.BASE_URL}/products/${doc.imageCover}`;
     doc.imageCover = imageUrl;
   }

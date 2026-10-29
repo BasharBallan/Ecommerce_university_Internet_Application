@@ -91,7 +91,7 @@ app.use(
 // Custom language middleware
 app.use(langMiddleware);
 // Swagger
-const { swaggerUi, swaggerSpec } = require("./swagger");
+const { swaggerUi, swaggerSpec } = require("../frontend/swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------------------------------
@@ -108,6 +108,6 @@ app.all('*', (req, res, next) => {
 app.use(errorLogger);
 
 // Global error handler
-//app.use(globalError);
+app.use(globalError);
 
 module.exports = app;

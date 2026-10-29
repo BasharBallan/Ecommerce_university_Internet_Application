@@ -17,7 +17,6 @@ const {
 } = require('./productService');
 const authService = require('../user/authService');
 const { cache } = require('../../middlewares/cache');
-const cacheService = require('../../utils/cacheService');
 
 const router = express.Router();
 
@@ -74,6 +73,9 @@ const router = express.Router();
  *               price:
  *                 type: number
  *                 example: 15.5
+ *               imageCover:
+  *                 type: string
+  *                 example: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=1000&q=80"
  *               category:
  *                 type: string
  *                 example: "Dairy"
@@ -99,12 +101,9 @@ router
     uploadProductImage,
     resizeProductImage,
     createProductValidator,
-    async (req, res, next) => {
-      await cacheService.del('products:all');
-      next();
-    },
     createProduct
   );
+
 /**
  * @swagger
  * /api/v1/products/{id}:
@@ -197,22 +196,12 @@ router
     uploadProductImage,
     resizeProductImage,
     updateProductValidator,
-    async (req, res, next) => {
-      await cacheService.del(`product:${req.params.id}`);
-      await cacheService.del('products:all');
-      next();
-    },
     updateProduct
   )
   .delete(
     authService.protect,
     authService.allowedTo('admin'),
     deleteProductValidator,
-    async (req, res, next) => {
-      await cacheService.del(`product:${req.params.id}`);
-      await cacheService.del('products:all');
-      next();
-    },
     deleteProduct
   );
 

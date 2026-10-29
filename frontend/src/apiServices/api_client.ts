@@ -2,26 +2,26 @@ import axios, { type AxiosRequestConfig } from "axios";
 import { getToken } from "./cookie";
 
 export const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "http://localhost:8000/api/v1",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-
-  // withCredentials: true, // important to send cookies
+  withCredentials: true,
 });
 
 axiosInstance.interceptors.request.use((config) => {
   const token = getToken();
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
 class ApiClient<TResponse, TRequest = unknown> {
   endpoint: string;
-  baseURL: any;
 
   constructor(endpoint: string) {
     this.endpoint = endpoint;
@@ -29,23 +29,44 @@ class ApiClient<TResponse, TRequest = unknown> {
 
   async getAll(config?: AxiosRequestConfig): Promise<TResponse> {
     const res = await axiosInstance.get<TResponse>(
-      this.endpoint, config);
+      this.endpoint,
+      config
+    );
     return res.data;
   }
 
-
-
-  async get(id: string | number, config?: AxiosRequestConfig): Promise<TResponse> {
+  async get(
+    id: string | number,
+    config?: AxiosRequestConfig
+  ): Promise<TResponse> {
     const res = await axiosInstance.get<TResponse>(
       `${this.endpoint}/${id}`,
       config
     );
-
     return res.data;
   }
-  async post(data: TRequest): Promise<TResponse> {
+
+  async post(data: TRequest, customPath?: string): Promise<TResponse> {
+    const targetUrl = customPath ? `${this.endpoint}/${customPath}` : this.endpoint;
+    const isFormData = data instanceof FormData;
     const res = await axiosInstance.post<TResponse>(
-      this.endpoint, data);
+      targetUrl,
+      data,
+      isFormData ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+    );
+    return res.data;
+  }
+
+  async update(
+    id: string | number,
+    data: Partial<TRequest>
+  ): Promise<TResponse> {
+    const isFormData = data instanceof FormData;
+    const res = await axiosInstance.put<TResponse>(
+      `${this.endpoint}/${id}`,
+      data,
+      isFormData ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+    );
     return res.data;
   }
 
@@ -53,28 +74,24 @@ class ApiClient<TResponse, TRequest = unknown> {
     const res = await axiosInstance.post<TResponse>(
       this.endpoint
     );
-
     return res.data;
   }
 
-  update = async (id: string | number, data: Partial<TRequest>): Promise<TResponse> => {
-    const res = await axiosInstance.put<TResponse>(
-      `${this.endpoint}/${id}`, data);
-    return res.data;
-  }
-
-
-  delete = async (id: string | number): Promise<TResponse> => {
+  async delete(id: string | number): Promise<TResponse> {
     const res = await axiosInstance.delete<TResponse>(
-      `${this.endpoint}/${id}`);
+      `${this.endpoint}/${id}`
+    );
     return res.data;
   }
-  async patch(path: string | number, data: Partial<TRequest>): Promise<TResponse> {
+
+  async patch(
+    path: string | number,
+    data: Partial<TRequest>
+  ): Promise<TResponse> {
     const res = await axiosInstance.patch<TResponse>(
       `${this.endpoint}/${path}`,
       data
     );
-
     return res.data;
   }
 }

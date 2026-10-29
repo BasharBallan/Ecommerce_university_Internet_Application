@@ -68,7 +68,7 @@ export default function StoreNavbar({
               component="span"
               sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
             >
-              FlyStore
+              ShopEase
             </Typography>
           </Box>
 

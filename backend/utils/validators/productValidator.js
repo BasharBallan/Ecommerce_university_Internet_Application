@@ -2,12 +2,34 @@ const slugify = require('slugify');
 const { check, body } = require('express-validator');
 const validatorMiddleware = require('../../middlewares/validatorMiddleware');
 
+// Supported categories matching the Mongoose schema exactly
+const ALLOWED_CATEGORIES = [
+  'Dairy',
+  'Bakery',
+  'Beverages',
+  'Snacks',
+  'Canned',
+  'Meat',
+  'Poultry',
+  'Fruits',
+  'Vegetables',
+  'Grains',
+  'Oils',
+  'Pantry',
+  'Spices',
+  'Cleaning',
+  'Household',
+  'Personal Care',
+];
+
 exports.createProductValidator = [
   check('title')
-    .isLength({ min: 3 })
-    .withMessage('must be at least 3 chars')
     .notEmpty()
     .withMessage('Product required')
+    .isLength({ min: 3 })
+    .withMessage('must be at least 3 chars')
+    .isLength({ max: 100 })
+    .withMessage('Too long product title')
     .custom((val, { req }) => {
       req.body.slug = slugify(val);
       return true;
@@ -15,6 +37,8 @@ exports.createProductValidator = [
   check('description')
     .notEmpty()
     .withMessage('Product description is required')
+    .isLength({ min: 20 })
+    .withMessage('Too short product description (min 20 chars)')
     .isLength({ max: 2000 })
     .withMessage('Too long description'),
   check('quantity')
@@ -25,32 +49,28 @@ exports.createProductValidator = [
   check('sold')
     .optional()
     .isNumeric()
-    .withMessage('Product quantity must be a number'),
+    .withMessage('Product sold must be a number'),
   check('price')
     .notEmpty()
     .withMessage('Product price is required')
     .isNumeric()
-    .withMessage('Product price must be a number')
-    .isLength({ max: 32 })
-    .withMessage('To long price'),
-  check('imageCover').notEmpty().withMessage('Product imageCover is required'),
+    .withMessage('Product price must be a number'),
+
+  // Custom check for imageCover since multer attaches file information or req.body.imageCover
+  check('imageCover')
+    .custom((_, { req }) => {
+      if (!req.file && !req.body.imageCover) {
+        throw new Error('Product imageCover is required');
+      }
+      return true;
+    }),
+
   check('category')
     .notEmpty()
     .withMessage('Product must belong to a category')
-    .isIn(['Dairy', 'Bakery', 'Beverages', 'Snacks', 'Canned Goods', 'Meat', 'Produce'])
+    .isIn(ALLOWED_CATEGORIES)
     .withMessage('Invalid category value'),
-  check('ratingsAverage')
-    .optional()
-    .isNumeric()
-    .withMessage('ratingsAverage must be a number')
-    .isLength({ min: 1 })
-    .withMessage('Rating must be above or equal 1.0')
-    .isLength({ max: 5 })
-    .withMessage('Rating must be below or equal 5.0'),
-  check('ratingsQuantity')
-    .optional()
-    .isNumeric()
-    .withMessage('ratingsQuantity must be a number'),
+
   validatorMiddleware,
 ];
 
@@ -64,9 +84,15 @@ exports.updateProductValidator = [
   body('title')
     .optional()
     .custom((val, { req }) => {
-      req.body.slug = slugify(val);
+      if (val) {
+        req.body.slug = slugify(val);
+      }
       return true;
     }),
+  check('category')
+    .optional()
+    .isIn(ALLOWED_CATEGORIES)
+    .withMessage('Invalid category value'),
   validatorMiddleware,
 ];
 

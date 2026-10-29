@@ -1,31 +1,19 @@
-import { ShoppingCartOutlined } from "@mui/icons-material";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import {
   Box,
   Card,
   CardContent,
   CardMedia,
-  Chip,
   IconButton,
   Rating,
   Stack,
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { addToCart } from "../CartStore";
 
-export interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  imageUrl: string;
-  price: number;
-  discountPrice?: number | null;
-  rating?: number | null;
-  reviewCount?: number;
-  categoryId: string;
-  isFeatured?: boolean;
-}
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+
+import type { Product } from "../../../Entities/Product";
 
 interface ProductCardProps {
   product: Product;
@@ -42,19 +30,10 @@ export default function ProductCard({
 }: ProductCardProps) {
   const navigate = useNavigate();
 
+  // فتح صفحة التفاصيل عند الضغط على الكارد باستخدام الـ _id الحقيقي
   const openProductDetails = () => {
-    navigate(`/products/${product.id}`);
+    navigate(`/products/${product._id}`);
   };
-  const hasDiscount =
-    product.discountPrice != null &&
-    product.discountPrice >= 0 &&
-    product.discountPrice < product.price;
-
-  const discountPercentage = hasDiscount
-    ? Math.round(
-        ((product.price - product.discountPrice!) / product.price) * 100,
-      )
-    : 0;
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-US", {
@@ -67,7 +46,7 @@ export default function ProductCard({
       elevation={0}
       role="link"
       tabIndex={0}
-      aria-label={`View details for ${product.name}`}
+      aria-label={`View details for ${product.title}`}
       onClick={openProductDetails}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
@@ -96,12 +75,11 @@ export default function ProductCard({
         },
       }}
     >
-      {/* Product image */}
       <Box sx={{ position: "relative" }}>
         <CardMedia
           component="img"
-          image={product.imageUrl}
-          alt={product.name}
+          image={product.imageCover}
+          alt={product.title}
           sx={{
             height: 220,
             objectFit: "contain",
@@ -110,25 +88,12 @@ export default function ProductCard({
           }}
         />
 
-        {hasDiscount && (
-          <Chip
-            label={`-${discountPercentage}%`}
-            color="error"
-            size="small"
-            sx={{
-              position: "absolute",
-              top: 12,
-              left: 12,
-              fontWeight: 700,
-            }}
-          />
-        )}
-
         <IconButton
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          // onClick={() => onToggleFavorite?.(product)}
+          aria-label={
+            isFavorite ? "Remove from favorites" : "Add to favorites"
+          }
           onClick={(event) => {
-            event.stopPropagation();
+            event.stopPropagation(); // منع الانتقال لصفحة التفاصيل عند الضغط على زر المفضلة
             onToggleFavorite?.(product);
           }}
           sx={{
@@ -139,11 +104,12 @@ export default function ProductCard({
             "&:hover": { bgcolor: "grey.100" },
           }}
         >
-          <FavoriteBorderIcon color={isFavorite ? "error" : "action"} />
+          <FavoriteBorderIcon
+            color={isFavorite ? "error" : "action"}
+          />
         </IconButton>
       </Box>
 
-      {/* Product information */}
       <CardContent
         sx={{
           p: 2,
@@ -156,6 +122,7 @@ export default function ProductCard({
         <Typography
           variant="h6"
           component="h3"
+          title={product.title}
           sx={{
             fontSize: "1rem",
             fontWeight: 700,
@@ -163,9 +130,8 @@ export default function ProductCard({
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
           }}
-          title={product.name}
         >
-          {product.name}
+          {product.title}
         </Typography>
 
         {product.description && (
@@ -185,66 +151,53 @@ export default function ProductCard({
           </Typography>
         )}
 
-        {product.rating != null && (
+        {product.ratingsAverage != null && (
           <Stack
             direction="row"
             spacing={0.75}
             sx={{ mt: 1, alignItems: "center" }}
           >
             <Rating
-              value={product.rating}
+              value={product.ratingsAverage}
               precision={0.5}
               readOnly
               size="small"
             />
 
-            {product.reviewCount != null && (
-              <Typography variant="caption" color="text.secondary">
-                ({product.reviewCount})
-              </Typography>
-            )}
+            <Typography variant="caption" color="text.secondary">
+              ({product.ratingsQuantity ?? 0})
+            </Typography>
           </Stack>
         )}
 
         <Box sx={{ flexGrow: 1, minHeight: 16 }} />
 
-        {/* Price and add-to-cart button */}
         <Stack
           direction="row"
           spacing={1}
-          sx={{ mt: 2, alignItems: "center", justifyContent: "space-between" }}
+          sx={{
+            mt: 2,
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
         >
-          <Box>
-            {hasDiscount && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ textDecoration: "line-through" }}
-              >
-                {formatPrice(product.price)}
-              </Typography>
-            )}
-
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: "1.1rem",
-                fontWeight: 700,
-                color: "primary.main",
-              }}
-            >
-              {formatPrice(
-                hasDiscount ? product.discountPrice! : product.price,
-              )}
-            </Typography>
-          </Box>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: "1.1rem",
+              fontWeight: 700,
+              color: "primary.main",
+            }}
+          >
+            {formatPrice(product.price)}
+          </Typography>
 
           <IconButton
-            aria-label={`Add ${product.name} to cart`}
+            aria-label={`Add ${product.title} to cart`}
             color="primary"
             onClick={(event) => {
-              event.stopPropagation();
-              addToCart(product);
+              event.stopPropagation(); // منع الانتقال لصفحة التفاصيل عند الضغط على زر السلة
+              onAddToCart?.(product);
             }}
             sx={{
               border: "1px solid",
@@ -252,7 +205,7 @@ export default function ProductCard({
               borderRadius: 2,
             }}
           >
-            <ShoppingCartOutlined />
+            <ShoppingCartOutlinedIcon />
           </IconButton>
         </Stack>
       </CardContent>

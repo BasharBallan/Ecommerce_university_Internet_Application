@@ -6,31 +6,30 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import StoreNavbar from "../components/StoreNavbar";
 import CategoryFilter from "../components/CategoryFilter";
 import FeaturedProducts from "../components/FeaturedProducts";
-import { mockCategories, mockProducts } from "../data/mockData";
 
-// These arrays will be replaced with data fetched from the backend.
-// const categoriesFromBackend: Category[] = [];
-// const productsFromBackend: Product[] = [];
+import { productCategories } from "../../../Entities/ProductCategory";
+import { useProducts } from "../../../Hooks/useProducts";
 
 export default function HomePage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const { data: products = [], isLoading, isError, error } = useProducts();
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
 
-    return mockProducts.filter((product) => {
+    return products.filter((product) => {
       const matchesCategory =
-        selectedCategory === null || product.categoryId === selectedCategory;
+        selectedCategory === null || product.category === selectedCategory;
 
       const matchesSearch =
-        normalizedSearch.length === 0 ||
-        product.name.toLowerCase().includes(normalizedSearch) ||
-        (product.description ?? "").toLowerCase().includes(normalizedSearch);
+        normalizedSearch === "" ||
+        product.title.toLowerCase().includes(normalizedSearch) ||
+        product.description.toLowerCase().includes(normalizedSearch);
 
       return matchesCategory && matchesSearch;
     });
-  }, [searchValue, selectedCategory]);
+  }, [products, searchValue, selectedCategory]);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
@@ -104,7 +103,7 @@ export default function HomePage() {
           </Typography>
 
           <CategoryFilter
-            categories={mockCategories}
+            categories={productCategories}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
           />
@@ -119,8 +118,17 @@ export default function HomePage() {
           <Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>
             Discover products selected for you.
           </Typography>
-
-          <FeaturedProducts products={filteredProducts} />
+          <FeaturedProducts
+            products={filteredProducts}
+            loading={isLoading}
+            error={
+              isError
+                ? error instanceof Error
+                  ? error.message
+                  : "Failed to load products."
+                : null
+            }
+          />
         </Box>
 
         {/* Offers */}

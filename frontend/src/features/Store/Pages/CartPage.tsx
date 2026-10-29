@@ -1,4 +1,3 @@
-
 import {
   Alert,
   Box,
@@ -9,6 +8,7 @@ import {
   Paper,
   Stack,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -16,32 +16,64 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
+import DeleteOutlined from "@mui/icons-material/DeleteOutlined";
 
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import StoreNavbar from "../components/StoreNavbar";
-import {
-  getCartItemCount,
-  getCartSubtotal,
-  removeFromCart,
-  updateCartQuantity,
-  useCart,
-} from "../CartStore";
-import { DeleteOutlined } from "@mui/icons-material";
+import { removeFromCart, updateCartQuantity, useCart } from "../CartStore";
+import ApiClient from "../../../apiServices/api_client";
 
-
+const orderApiClient = new ApiClient<any, any>("/orders");
 
 export default function CartPage() {
   const navigate = useNavigate();
   const cartItems = useCart();
 
-  const itemCount = getCartItemCount();
-  const subtotal = getCartSubtotal();
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  const subtotal = cartItems.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(price);
+
+  const handleCreateOrder = async () => {
+    if (!cartItems || cartItems.length === 0) {
+      setErrorMsg("Cart items cannot be empty");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMsg("");
+
+      const payload = {
+        orderItems: cartItems.map((item) => ({
+          product: item.productId || item.product._id,
+          quantity: item.quantity,
+        })),
+      };
+
+      await orderApiClient.post(payload);
+
+      navigate("/products");
+    } catch (err: any) {
+      setErrorMsg(
+        err.response?.data?.message || err.message || "Failed to create order"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -62,11 +94,7 @@ export default function CartPage() {
         </Button>
 
         <Stack spacing={1} sx={{ mb: 4 }}>
-          <Typography
-            variant="h4"
-            component="h1"
-            sx={{ fontWeight: 800 }}
-          >
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 800 }}>
             Shopping Cart
           </Typography>
 
@@ -85,7 +113,11 @@ export default function CartPage() {
             }}
           >
             <ShoppingCartOutlinedIcon
-              sx={{ fontSize: 64, color: "text.disabled", mb: 2 }}
+              sx={{
+                fontSize: 64,
+                color: "text.disabled",
+                mb: 2,
+              }}
             />
 
             <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
@@ -116,17 +148,10 @@ export default function CartPage() {
               alignItems: "start",
             }}
           >
-            {/* Cart items */}
             <Stack spacing={2}>
               {cartItems.map(({ product, productId, quantity }) => {
-                const hasDiscount =
-                  product.discountPrice != null &&
-                  product.discountPrice >= 0 &&
-                  product.discountPrice < product.price;
-
-                const unitPrice = hasDiscount
-                  ? product.discountPrice!
-                  : product.price;
+                const unitPrice = product.price;
+                const hasStock = product.quantity > 0;
 
                 return (
                   <Paper
@@ -149,8 +174,8 @@ export default function CartPage() {
                     >
                       <Box
                         component="img"
-                        src={product.imageUrl}
-                        alt={product.name}
+                        src={product.imageCover}
+                        alt={product.title}
                         sx={{
                           width: "100%",
                           height: { xs: 100, sm: 130 },
@@ -166,21 +191,18 @@ export default function CartPage() {
                             variant="h6"
                             sx={{
                               fontWeight: 700,
-                              fontSize: { xs: "1rem", md: "1.15rem" },
+                              fontSize: {
+                                xs: "1rem",
+                                md: "1.15rem",
+                              },
                             }}
                           >
-                            {product.name}
+                            {product.title}
                           </Typography>
 
-                          {hasDiscount && (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ textDecoration: "line-through" }}
-                            >
-                              {formatPrice(product.price)}
-                            </Typography>
-                          )}
+                          <Typography variant="body2" color="text.secondary">
+                            {product.category}
+                          </Typography>
 
                           <Typography
                             color="primary.main"
@@ -199,10 +221,14 @@ export default function CartPage() {
                             gap: 1,
                           }}
                         >
-                          <Stack direction="row" sx={{ alignItems: "center" }} spacing={1}>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{ alignItems: "center" }}
+                          >
                             <IconButton
                               size="small"
-                              aria-label={`Decrease ${product.name} quantity`}
+                              aria-label={`Decrease ${product.title} quantity`}
                               disabled={quantity <= 1}
                               onClick={() =>
                                 updateCartQuantity(productId, quantity - 1)
@@ -228,9 +254,15 @@ export default function CartPage() {
 
                             <IconButton
                               size="small"
-                              aria-label={`Increase ${product.name} quantity`}
+                              aria-label={`Increase ${product.title} quantity`}
+                              disabled={
+                                !hasStock || quantity >= product.quantity
+                              }
                               onClick={() =>
-                                updateCartQuantity(productId, quantity + 1)
+                                updateCartQuantity(
+                                  productId,
+                                  Math.min(quantity + 1, product.quantity),
+                                )
                               }
                               sx={{
                                 border: "1px solid",
@@ -243,17 +275,26 @@ export default function CartPage() {
 
                           <IconButton
                             color="error"
-                            aria-label={`Remove ${product.name} from cart`}
+                            aria-label={`Remove ${product.title} from cart`}
                             onClick={() => removeFromCart(productId)}
                           >
                             <DeleteOutlined />
                           </IconButton>
                         </Stack>
 
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                        >
+                        {!hasStock && (
+                          <Alert severity="warning">
+                            This product is currently out of stock.
+                          </Alert>
+                        )}
+
+                        {hasStock && quantity > product.quantity && (
+                          <Alert severity="warning">
+                            The requested quantity exceeds available stock.
+                          </Alert>
+                        )}
+
+                        <Typography variant="body2" color="text.secondary">
                           Item total:{" "}
                           <Box
                             component="span"
@@ -270,10 +311,8 @@ export default function CartPage() {
                   </Paper>
                 );
               })}
-
             </Stack>
 
-            {/* Order summary */}
             <Paper
               variant="outlined"
               sx={{
@@ -288,17 +327,31 @@ export default function CartPage() {
               </Typography>
 
               <Stack spacing={2}>
-                <Stack direction="row" sx={{ justifyContent: "space-between", gap: 2 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: "space-between",
+                    gap: 2,
+                  }}
+                >
                   <Typography color="text.secondary">
                     Items ({itemCount})
                   </Typography>
+
                   <Typography sx={{ fontWeight: 600 }}>
                     {formatPrice(subtotal)}
                   </Typography>
                 </Stack>
 
-                <Stack direction="row" sx={{ justifyContent: "space-between", gap: 2 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: "space-between",
+                    gap: 2,
+                  }}
+                >
                   <Typography color="text.secondary">Shipping</Typography>
+
                   <Typography color="text.secondary">
                     Calculated at checkout
                   </Typography>
@@ -306,10 +359,17 @@ export default function CartPage() {
 
                 <Divider />
 
-                <Stack direction="row" sx={{ justifyContent: "space-between", gap: 2 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    justifyContent: "space-between",
+                    gap: 2,
+                  }}
+                >
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>
                     Subtotal
                   </Typography>
+
                   <Typography
                     variant="h6"
                     color="primary.main"
@@ -319,23 +379,29 @@ export default function CartPage() {
                   </Typography>
                 </Stack>
 
+                {errorMsg && (
+                  <Alert severity="error">
+                    {errorMsg}
+                  </Alert>
+                )}
+
                 <Alert severity="info">
-                  Shipping fees and final order confirmation will be handled
-                  during checkout.
+                  Shipping fees and final order confirmation will be handled during order placement.
                 </Alert>
 
                 <Button
                   fullWidth
                   variant="contained"
                   size="large"
-                  onClick={() => navigate("/checkout")}
+                  disabled={loading || cartItems.length === 0}
+                  onClick={handleCreateOrder}
                   sx={{
                     py: 1.5,
                     borderRadius: 2,
                     fontWeight: 800,
                   }}
                 >
-                  Proceed to Checkout
+                  {loading ? <CircularProgress size={24} color="inherit" /> : "Create Order"}
                 </Button>
 
                 <Button

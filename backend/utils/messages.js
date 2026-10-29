@@ -36,7 +36,21 @@ module.exports = {
 
   email_already_used: { en: 'email is already in use.', ar: 'البريد الإلكتروني مستخدم بالفعل.' },
 
-  logout_success:{en:'Logged out successfully.', ar: 'تم تسجيل الخروج بنجاح.'},
+  logout_success: { en: 'Logged out successfully.', ar: 'تم تسجيل الخروج بنجاح.' },
+
+
+  // =========================
+  // 📦 Product Service
+  // =========================
+  product_created: { en: 'Product created successfully.', ar: 'تم إنشاء المنتج بنجاح.' },
+
+  product_fetched: { en: 'Product details fetched successfully.', ar: 'تم جلب تفاصيل المنتج بنجاح.' },
+
+  product_list: { en: 'Products list retrieved successfully.', ar: 'تم استرجاع قائمة المنتجات بنجاح.' },
+
+  product_updated: { en: 'Product updated successfully.', ar: 'تم تحديث المنتج بنجاح.' },
+
+  product_deleted: { en: 'Product deleted successfully.', ar: 'تم حذف المنتج بنجاح.' },
 
 
   // =========================
@@ -45,4 +59,14 @@ module.exports = {
   not_found: { en: 'Resource not found.', ar: 'المورد غير موجود.' },
 
   server_error: { en: 'Internal server error.', ar: 'خطأ داخلي في الخادم.' },
+
+
+  // =========================
+    // 🛍️ Order Service
+    // =========================
+    order_created: { en: 'Order created successfully.', ar: 'تم إنشاء الطلب بنجاح.' },
+    order_fetched: { en: 'Order details fetched successfully.', ar: 'تم جلب تفاصيل الطلب بنجاح.' },
+    order_list: { en: 'Orders list retrieved successfully.', ar: 'تم استرجاع قائمة الطلبات بنجاح.' },
+    order_updated: { en: 'Order status updated successfully.', ar: 'تم تحديث حالة الطلب بنجاح.' },
+    order_items_empty: { en: 'Order items cannot be empty.', ar: 'عناصر الطلب لا يمكن أن تكون فارغة.' },
 };
