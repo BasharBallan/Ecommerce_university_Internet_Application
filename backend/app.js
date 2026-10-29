@@ -91,7 +91,7 @@ app.use(
 // Custom language middleware
 app.use(langMiddleware);
 // Swagger
-const { swaggerUi, swaggerSpec } = require("../frontend/swagger");
+const { swaggerUi, swaggerSpec } = require("./swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------------------------------
