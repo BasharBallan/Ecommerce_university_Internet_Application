@@ -6,19 +6,19 @@ import {
 } from "@mui/material";
 
 export interface Category {
-  id: string;
+  id?: string;
   name: string;
 }
 
 interface CategoryFilterProps {
-  categories: Category[];
+  categories: (string | Category)[]; // يدعم تمرير مصفوفة نصوص أو مصفوفة كائنات بأمان تام
   selectedCategory: string | null;
-  onCategoryChange: (categoryId: string | null) => void;
+  onCategoryChange: (category: string | null) => void;
   loading?: boolean;
 }
 
 export default function CategoryFilter({
-  categories,
+  categories = [],
   selectedCategory,
   onCategoryChange,
   loading = false,
@@ -55,21 +55,29 @@ export default function CategoryFilter({
           All Products
         </Button>
 
-        {categories.map((category) => (
-          <Button
-            key={category.id}
-            variant={
-              selectedCategory === category.id ? "contained" : "outlined"
-            }
-            onClick={() => onCategoryChange(category.id)}
-            sx={{ borderRadius: 5, textTransform: "none", px: 2.5 }}
-          >
-            {category.name}
-          </Button>
-        ))}
+        {categories.map((cat, index) => {
+          // استخراج اسم التصنيف والقيمة البرمجية سواء كان العنصر نصاً أو كئيناً
+          const categoryName = typeof cat === "string" ? cat : cat?.name;
+          const categoryKey = typeof cat === "string" ? cat : cat?.id || cat?.name || index;
+
+          if (!categoryName) return null;
+
+          return (
+            <Button
+              key={categoryKey}
+              variant={
+                selectedCategory === categoryName ? "contained" : "outlined"
+              }
+              onClick={() => onCategoryChange(categoryName)}
+              sx={{ borderRadius: 5, textTransform: "none", px: 2.5 }}
+            >
+              {categoryName}
+            </Button>
+          );
+        })}
       </Box>
 
-      {categories.length === 0 && (
+      {(!categories || categories.length === 0) && (
         <Typography color="text.secondary" sx={{ mt: 2 }}>
           No categories available.
         </Typography>

@@ -1,6 +1,6 @@
 
 import type { Category } from "../components/CategoryFilter";
-import type { Product } from "../components/ProductCard";
+
 
 export const mockCategories: Category[] = [
   { id: "electronics", name: "Electronics" },
@@ -9,7 +9,7 @@ export const mockCategories: Category[] = [
   { id: "home", name: "Home & Living" },
 ];
 
-export const mockProducts: Product[] = [
+export const mockProducts: any[] = [
   {
     id: "p1",
     name: "Wireless Headphones",

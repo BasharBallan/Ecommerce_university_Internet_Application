@@ -5,30 +5,30 @@ export const registerSchema = z
     full_name: z
       .string()
       .trim()
-      .min(1, "الاسم الكامل مطلوب")
-      .min(3, "يجب أن يتكون الاسم من 3 أحرف على الأقل"),
+      .min(1, "name is required")
+      .min(3, "name must be at least 3 char"),
 
     email: z
       .string()
       .trim()
-      .min(1, "البريد الإلكتروني مطلوب")
-      .email("يرجى إدخال بريد إلكتروني صحيح"),
+      .min(1, "email is required")
+      .email("please enter valid email "),
 
     password: z
       .string()
-      .min(8, "كلمة المرور يجب أن تتكون من 8 أحرف على الأقل")
-      .regex(/[A-Z]/, "يجب أن تحتوي على حرف إنجليزي كبير")
-      .regex(/[a-z]/, "يجب أن تحتوي على حرف إنجليزي صغير")
-      .regex(/[0-9]/, "يجب أن تحتوي على رقم"),
+      .min(8, "password must be at least 8 char")
+      .regex(/[A-Z]/, "password must contain an uppercase English letter")
+      .regex(/[a-z]/, "password must contain a lowercase English letter")
+      .regex(/[0-9]/, "password must contain a number"),
 
     password_confirmation: z
       .string()
-      .min(1, "تأكيد كلمة المرور مطلوب"),
+      .min(1, "password confirmation is required"),
   })
   .refine(
     (data) => data.password === data.password_confirmation,
     {
-      message: "كلمتا المرور غير متطابقتين",
+      message: "passwords do not match",
       path: ["password_confirmation"],
     }
   );

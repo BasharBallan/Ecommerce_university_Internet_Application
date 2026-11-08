@@ -178,10 +178,9 @@ export default function LoginPage() {
               <Alert severity="error">
                 {loginMutation.error instanceof Error
                   ? loginMutation.error.message
-                  : "some thing wrong try again ."}
+                  : "Something went wrong. Please try again."}
               </Alert>
             )}
-
             <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
               <Stack spacing={2.5}>
                 <Controller
