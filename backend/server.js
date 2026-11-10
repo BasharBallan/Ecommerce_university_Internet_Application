@@ -41,11 +41,10 @@ global.io = io; // Used across controllers via global.io
 // ------------------------------------------------------
 const PORT = process.env.PORT || 8000;
 
-if (!process.env.VERCEL) {
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    logger.info(`🚀 Server + Socket.IO running on port ${PORT} (0.0.0.0)`);
-  });
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
 
 // ------------------------------------------------------
 // Handle unhandled promise rejections
@@ -65,7 +64,5 @@ process.on("uncaughtException", (err) => {
   });
 });
 
-// ------------------------------------------------------
-// Export app for Vercel Serverless deployment
-// ------------------------------------------------------
+
 module.exports = app;
