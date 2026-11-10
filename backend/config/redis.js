@@ -4,45 +4,28 @@ dotenv.config({ path: "config.env" });
 
 let client;
 
+const useLocalRedis = process.env.USE_LOCAL_REDIS === "true" || process.env.PREFER_LOCAL_REDIS === "true";
 const url = process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
 
-// Try Upstash Redis if package is installed and credentials exist
-let upstashInitialized = false;
-try {
-  const { Redis } = require("@upstash/redis");
-  if (url && token) {
-    client = new Redis({
-      url: url,
-      token: token,
-    });
-    client.ping().then(() => {
-      console.log("📦 Upstash Redis connected successfully via REST!");
-    }).catch((err) => {
-      console.error("❌ Upstash Redis Connection Error:", err.message);
-    });
-    upstashInitialized = true;
-  }
-} catch (e) {
-  // @upstash/redis not installed, fallback to local Redis
-}
+let localConnected = false;
 
-// Fallback to standard redis client (connects to Docker tic-redis container)
-if (!upstashInitialized) {
+// 1. Connect to high-speed In-Memory Local Redis (Docker container tic-redis)
+if (useLocalRedis || !url || !token) {
   const { createClient } = require("redis");
   const localClient = createClient({
     url: redisUrl,
   });
 
-  localClient.on("error", (err) => console.error("❌ Redis Client Error:", err.message));
+  localClient.on("error", (err) => console.error("❌ Local Redis Client Error:", err.message));
   localClient.connect().then(() => {
-    console.log(`📦 Redis connected successfully to: ${redisUrl}`);
+    console.log(`⚡ High-Speed Local Redis (In-Memory RAM) connected successfully to: ${redisUrl}`);
+    localConnected = true;
   }).catch((err) => {
-    console.warn("⚠️ Redis connection warning:", err.message);
+    console.warn("⚠️ Local Redis connection warning:", err.message);
   });
 
-  // Wrapper providing same get/set/del interface
   client = {
     get: async (key) => {
       try {
@@ -76,6 +59,18 @@ if (!upstashInitialized) {
     },
     ping: async () => localClient.ping(),
   };
+} else {
+  // 2. Fallback to Cloud Upstash Redis via REST
+  const { Redis } = require("@upstash/redis");
+  client = new Redis({
+    url: url,
+    token: token,
+  });
+  client.ping().then(() => {
+    console.log("📦 Cloud Upstash Redis connected successfully via REST!");
+  }).catch((err) => {
+    console.error("❌ Upstash Redis Connection Error:", err.message);
+  });
 }
 
 module.exports = client;
