@@ -1,34 +1,47 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
 
+// Dedicated rate limiter for login attempts (Security Requirement: Limit login attempts)
+const loginLimiter = rateLimit({
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 10, // Limit to 5 attempts per IP per 15 minutes
+   message: {
+      status: "fail",
+      message: "Too many login attempts from this IP. Please try again after 15 minutes.",
+   },
+   standardHeaders: true,
+   legacyHeaders: false,
+});
+
 const {
-  signupValidator,
-  loginValidator,
-  adminLoginValidator,
-  adminSignupValidator,
-  forgotPasswordValidator
+   signupValidator,
+   loginValidator,
+   adminLoginValidator,
+   adminSignupValidator,
+   forgotPasswordValidator
 } = require("../../utils/validators/authValidator");
 
 const {
-  signup,
-  login,
-  forgotPassword,
-  verifyPassResetCode,
-  resetPassword,
-  AdminSignup,
-  Adminlogin,
-  refreshToken,
-  logout,
-  protect,
-  getMySessions,
-  logoutFromSession,
-  logoutFromOtherSessions,
-  googleCallbackService,
-  googleUnlinkService,
-  googleInitService,
-  setPasswordService,
-  resendVerificationCode,
-} =require("./authService");
+   signup,
+   login,
+   forgotPassword,
+   verifyPassResetCode,
+   resetPassword,
+   AdminSignup,
+   Adminlogin,
+   refreshToken,
+   logout,
+   protect,
+   getMySessions,
+   logoutFromSession,
+   logoutFromOtherSessions,
+   googleCallbackService,
+   googleUnlinkService,
+   googleInitService,
+   setPasswordService,
+   resendVerificationCode,
+} = require("./authService");
 
 /**
  * @swagger
@@ -111,7 +124,7 @@ router.post("/signup", signupValidator, signup);
  *       401:
  *         description: Invalid credentials
  */
-router.post("/login", loginValidator, login);
+router.post("/login", loginLimiter, loginValidator, login);
 
 /* =====================================================================
    ADMIN LOGIN
@@ -145,7 +158,7 @@ router.post("/login", loginValidator, login);
  *       401:
  *         description: Invalid admin credentials
  */
-router.post("/adminLogin", adminLoginValidator, Adminlogin);
+router.post("/adminLogin", loginLimiter, adminLoginValidator, Adminlogin);
 
 /* =====================================================================
    ADMIN SIGNUP

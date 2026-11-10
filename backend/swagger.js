@@ -11,7 +11,7 @@ const options = {
       description: `
 # 🔐 Authentication & Quick Test Guide
 
-This API uses **JWT Bearer Tokens** for authentication.
+This API uses JWT Bearer Tokens for authentication.
 For quick testing, you can directly copy and use the pre-generated tokens below without needing to call the login endpoint.
 
 ---
@@ -32,16 +32,16 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YWUyODQ3ZTY5ZTFkMDQ0MGZlZmR
 
 ## 🚀 How to Use Tokens in Swagger
 
-1. Click the **Authorize** button at the top-right corner of the Swagger UI.
+1. Click the Authorize button at the top-right corner of the Swagger UI.
 2. Paste your token (just the token string, without the word 'Bearer' if the scheme adds it automatically, or as \`Bearer <TOKEN>\`).
-3. Click **Authorize**, then **Close**.
+3. Click Authorize, then Close.
 4. Now you can test any protected API according to your role permissions.
 
 ---
 
 ## 📌 Notes
-- These tokens are for **testing only**.
-- If you receive a **401 Unauthorized** or **403 Forbidden**, make sure you are using the correct token (Admin vs User) for the required endpoint permissions.
+- These tokens are for testing only.
+- If you receive a 401 Unauthorized or 403 Forbidden, make sure you are using the correct token (Admin vs User) for the required endpoint permissions.
 
 Enjoy testing your API!
       `,
@@ -61,9 +61,9 @@ Enjoy testing your API!
   },
 
   apis: [
-      path.join(__dirname, "./modules/**/*.js"),
-      path.join(__dirname, "./routes/**/*.js"),
-    ],
+    path.join(__dirname, 'modules/**/*.js').replace(/\\/g, '/'),
+    path.join(__dirname, 'routes/**/*.js').replace(/\\/g, '/'),
+  ],
 };
 
 const swaggerSpec = swaggerJsDoc(options);

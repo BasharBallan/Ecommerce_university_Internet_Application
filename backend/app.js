@@ -92,6 +92,10 @@ app.use(
 app.use(langMiddleware);
 // Swagger
 const { swaggerUi, swaggerSpec } = require("./swagger");
+app.get("/api-docs.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ------------------------------------------------------
@@ -99,15 +103,30 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // ------------------------------------------------------
 mountRoutes(app);
 
- // Handle unknown routes
-app.all('*', (req, res, next) => {
-  next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
- });
+// ------------------------------------------------------
+// Health Check Endpoint (Real-time DB / Redis / RabbitMQ Status)
+// ------------------------------------------------------
+app.get("/health", async (req, res) => {
+  const health = await getHealthStatus();
+  const statusCode = health.status === "UP" ? 200 : 503;
+  res.status(statusCode).json(health);
+});
 
-// Winston Error Logger
+// ------------------------------------------------------
+// 404 Handler - Unhandled Routes
+// ------------------------------------------------------
+app.all('*', (req, res, next) => {
+  next(new ApiError(`Can't find this route: ${req.originalUrl}`, 400));
+});
+
+// ------------------------------------------------------
+// Global Error Logging Middleware (Winston)
+// ------------------------------------------------------
 app.use(errorLogger);
 
-// Global error handler
+// ------------------------------------------------------
+// Global Error Handling Middleware (Express)
+// ------------------------------------------------------
 app.use(globalError);
 
 module.exports = app;
