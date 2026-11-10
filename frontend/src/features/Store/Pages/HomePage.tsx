@@ -7,8 +7,8 @@ import StoreNavbar from "../components/StoreNavbar";
 import CategoryFilter from "../components/CategoryFilter";
 import FeaturedProducts from "../components/FeaturedProducts";
 
-import { productCategories } from "../../../Entities/ProductCategory";
 import { useProducts } from "../../../Hooks/useProducts";
+import { ProductCategories } from "../../../Entities/ProductCategory";
 
 export default function HomePage() {
   const [searchValue, setSearchValue] = useState("");
@@ -103,7 +103,7 @@ export default function HomePage() {
           </Typography>
 
           <CategoryFilter
-            categories={productCategories}
+            categories={ProductCategories}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
           />

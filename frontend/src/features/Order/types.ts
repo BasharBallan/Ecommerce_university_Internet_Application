@@ -1,11 +1,12 @@
-
 export type OrderStatus =
   | "pending"
+  | "ready"
   | "confirmed"
   | "processing"
   | "shipped"
   | "delivered"
   | "cancelled"
+  | "rejected"
   | "failed";
 
 export interface OrderItem {

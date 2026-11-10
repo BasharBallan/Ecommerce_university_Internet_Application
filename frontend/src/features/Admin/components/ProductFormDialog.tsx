@@ -72,6 +72,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 interface ProductFormDialogProps {
   open: boolean;
+  categories?: any;
   initialProduct?: Product | null;
   onClose: () => void;
   onSubmit: (formData: FormData) => void;
