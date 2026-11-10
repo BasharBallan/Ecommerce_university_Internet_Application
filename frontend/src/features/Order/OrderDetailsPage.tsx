@@ -1,5 +1,5 @@
-
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Alert,
   Box,
@@ -7,13 +7,14 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Container,
   Divider,
   Stack,
   Typography,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { getMockOrderById } from "./OrderStore";
+import { useOrderDetails } from "./OrderService";
 import type { OrderStatus } from "./types";
 
 const statusConfig: Record<
@@ -24,11 +25,13 @@ const statusConfig: Record<
   }
 > = {
   pending: { label: "Pending", color: "warning" },
+  ready: { label: "Ready", color: "info" },
   confirmed: { label: "Confirmed", color: "success" },
   processing: { label: "Processing", color: "info" },
   shipped: { label: "Shipped", color: "info" },
   delivered: { label: "Delivered", color: "success" },
   cancelled: { label: "Cancelled", color: "default" },
+  rejected: { label: "Rejected", color: "error" },
   failed: { label: "Failed", color: "error" },
 };
 
@@ -38,42 +41,68 @@ const formatPrice = (amount: number) =>
     currency: "USD",
   }).format(amount);
 
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat("en", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(date));
+const formatDate = (date: string) => {
+  try {
+    return new Intl.DateTimeFormat("en", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(new Date(date));
+  } catch {
+    return date;
+  }
+};
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
 
-  // const order = mockOrders.find((item) => item.id === orderId);
-  const order = orderId ? getMockOrderById(orderId) : undefined;
+  const { data: order, isLoading, isError, error, refetch } = useOrderDetails(orderId);
 
-  if (!order) {
+  if (isLoading) {
+    return (
+      <Container maxWidth="md" sx={{ py: 10, textAlign: "center" }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (isError || !order) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <Stack spacing={3} sx={{ alignItems: "flex-start" }}>
           <Alert severity="error" sx={{ width: "100%" }}>
-            Order not found. The order may not exist or the link may be invalid.
+            {(error as any)?.response?.data?.message ||
+              (error as any)?.message ||
+              "Order not found. The order may not exist or the link may be invalid."}
           </Alert>
 
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/orders")}
-          >
-            Back to My Orders
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate("/orders")}
+            >
+              Back to My Orders
+            </Button>
+            <Button
+              startIcon={<RefreshIcon />}
+              variant="outlined"
+              onClick={() => refetch()}
+            >
+              Retry
+            </Button>
+          </Stack>
         </Stack>
       </Container>
     );
   }
 
-  const status = statusConfig[order.status];
+  const status = statusConfig[order.status] || {
+    label: order.status,
+    color: "default" as const,
+  };
 
   const calculatedTotal = order.items.reduce(
     (total, item) => total + item.quantity * item.unitPrice,
@@ -170,8 +199,8 @@ export default function OrderDetailsPage() {
               <Divider sx={{ my: 2 }} />
 
               <Stack spacing={3}>
-                {order.items.map((item) => (
-                  <Box key={item.productId}>
+                {order.items.map((item, idx) => (
+                  <Box key={`${item.productId}-${idx}`}>
                     <Stack
                       direction="row"
                       spacing={2}
@@ -251,15 +280,9 @@ export default function OrderDetailsPage() {
                 </Typography>
 
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  {formatPrice(calculatedTotal)}
+                  {formatPrice(order.totalAmount || calculatedTotal)}
                 </Typography>
               </Stack>
-
-              {calculatedTotal !== order.totalAmount && (
-                <Alert severity="warning" sx={{ mt: 2 }}>
-                  The stored order total does not match the sum of its items.
-                </Alert>
-              )}
             </CardContent>
           </Card>
 

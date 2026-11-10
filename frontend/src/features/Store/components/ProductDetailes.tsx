@@ -526,7 +526,14 @@ export default function ProductDetailsPage() {
             >
               <Box
                 component="img"
-                src={product.imageCover}
+                src={
+                  product.imageCover && (product.imageCover.startsWith("http://") || product.imageCover.startsWith("https://"))
+                    ? product.imageCover
+                    : "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80"
+                }
+                onError={(e: any) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80";
+                }}
                 alt={product.title}
                 sx={{
                   width: "100%",

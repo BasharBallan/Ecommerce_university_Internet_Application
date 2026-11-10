@@ -15,7 +15,7 @@ import StoreNavbar from "../components/StoreNavbar";
 import CategoryFilter from "../components/CategoryFilter";
 import FeaturedProducts from "../components/FeaturedProducts";
 import { useProducts } from "../../../Hooks/useProducts";
-import { productCategories } from "../../../Entities/ProductCategory";
+import { ProductCategories } from "../../../Entities/ProductCategory";
 
 const PRODUCTS_PER_PAGE = 8;
 
@@ -109,7 +109,7 @@ export default function ProductsPage() {
         </Typography>
 
         <CategoryFilter
-          categories={productCategories}
+          categories={ProductCategories}
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
         />

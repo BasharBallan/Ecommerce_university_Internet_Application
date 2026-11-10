@@ -21,7 +21,7 @@ import DeleteOutlined from "@mui/icons-material/DeleteOutlined";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import StoreNavbar from "../components/StoreNavbar";
-import { removeFromCart, updateCartQuantity, useCart } from "../CartStore";
+import { clearCart, removeFromCart, updateCartQuantity, useCart } from "../CartStore";
 import ApiClient from "../../../apiServices/api_client";
 
 const orderApiClient = new ApiClient<any, any>("/orders");
@@ -58,14 +58,15 @@ export default function CartPage() {
 
       const payload = {
         orderItems: cartItems.map((item) => ({
-          product: item.productId || item.product._id,
+          product: String(item.productId || (item.product as any).id || (item.product as any)._id),
           quantity: item.quantity,
         })),
       };
 
       await orderApiClient.post(payload);
+      clearCart();
 
-      navigate("/products");
+      navigate("/orders");
     } catch (err: any) {
       setErrorMsg(
         err.response?.data?.message || err.message || "Failed to create order"

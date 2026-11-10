@@ -15,6 +15,8 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 
 import type { Product } from "../../../Entities/Product";
 
+export type { Product };
+
 interface ProductCardProps {
   product: Product;
   onAddToCart?: (product: Product) => void;
@@ -30,9 +32,9 @@ export default function ProductCard({
 }: ProductCardProps) {
   const navigate = useNavigate();
 
-  // فتح صفحة التفاصيل عند الضغط على الكارد باستخدام الـ _id الحقيقي
+  // فتح صفحة التفاصيل عند الضغط على الكارد باستخدام الـ id الحقيقي
   const openProductDetails = () => {
-    navigate(`/products/${product._id}`);
+    navigate(`/products/${product.id || product._id}`);
   };
 
   const formatPrice = (price: number) =>
@@ -78,8 +80,15 @@ export default function ProductCard({
       <Box sx={{ position: "relative" }}>
         <CardMedia
           component="img"
-          image={product.imageCover}
+          image={
+            product.imageCover && (product.imageCover.startsWith("http://") || product.imageCover.startsWith("https://"))
+              ? product.imageCover
+              : "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80"
+          }
           alt={product.title}
+          onError={(e: any) => {
+            e.currentTarget.src = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80";
+          }}
           sx={{
             height: 220,
             objectFit: "contain",

@@ -46,7 +46,7 @@ export default function AdminProductsPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   // Mutation for creating or updating a product
-  const saveProductMutation = useMutation({
+  const saveProductMutation = useMutation<any, any, { id?: string; formData: any }>({
     mutationFn: (data: { id?: string; formData: any }) => {
       if (data.id) {
         return updateProduct(data.id, data.formData);
@@ -258,14 +258,14 @@ export default function AdminProductsPage() {
                           {product.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          ID: {product._id}
+                          ID: {product._id || product.id}
                         </Typography>
                       </Box>
                     </Box>
                   </TableCell>
 
                   <TableCell>
-                    {typeof product.category === "string" ? product.category : product.category?.name || "Uncategorized"}
+                    {typeof product.category === "string" ? product.category : (product.category as any)?.name || "Uncategorized"}
                   </TableCell>
 
                   <TableCell>
@@ -298,7 +298,7 @@ export default function AdminProductsPage() {
                     <IconButton
                       aria-label={`Delete ${product.title}`}
                       color="error"
-                      onClick={() => handleDelete(product._id)}
+                      onClick={() => handleDelete(product._id || String(product.id || ''))}
                       disabled={deleteProductMutation.isPending}
                     >
                       <DeleteOutlined />

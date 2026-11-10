@@ -1,6 +1,5 @@
-
 import { useSyncExternalStore } from "react";
-import type { Product } from "./components/ProductCard";
+import type { Product } from "../../Entities/Product";
 
 export interface CartItem {
   productId: string;
@@ -37,13 +36,15 @@ export function addToCart(product: Product, quantity = 1) {
     throw new Error("Quantity must be a positive integer.");
   }
 
+  const prodId = String(product.id || (product as any)._id);
+
   const existingItem = cartItems.find(
-    (item) => item.productId === product.id,
+    (item) => String(item.productId) === prodId,
   );
 
   if (existingItem) {
     cartItems = cartItems.map((item) =>
-      item.productId === product.id
+      String(item.productId) === prodId
         ? { ...item, quantity: item.quantity + quantity }
         : item,
     );
@@ -51,7 +52,7 @@ export function addToCart(product: Product, quantity = 1) {
     cartItems = [
       ...cartItems,
       {
-        productId: product.id,
+        productId: prodId,
         product,
         quantity,
       },
@@ -65,56 +66,25 @@ export function updateCartQuantity(
   productId: string,
   quantity: number,
 ) {
+  const prodId = String(productId);
   if (!Number.isInteger(quantity) || quantity < 1) {
-    throw new Error("Quantity must be a positive integer.");
+    return;
   }
 
   cartItems = cartItems.map((item) =>
-    item.productId === productId
-      ? { ...item, quantity }
-      : item,
+    String(item.productId) === prodId ? { ...item, quantity } : item,
   );
 
   notify();
 }
 
 export function removeFromCart(productId: string) {
-  cartItems = cartItems.filter(
-    (item) => item.productId !== productId,
-  );
-
+  const prodId = String(productId);
+  cartItems = cartItems.filter((item) => String(item.productId) !== prodId);
   notify();
 }
 
 export function clearCart() {
   cartItems = [];
   notify();
-}
-
-export function getCartItemCount() {
-  return cartItems.reduce(
-    (total, item) => total + item.quantity,
-    0,
-  );
-}
-
-export function getCartSubtotal() {
-  return Number(
-    cartItems
-      .reduce((total, item) => {
-        const { product, quantity } = item;
-
-        const hasDiscount =
-          product.discountPrice != null &&
-          product.discountPrice >= 0 &&
-          product.discountPrice < product.price;
-
-        const unitPrice = hasDiscount
-          ? product.discountPrice!
-          : product.price;
-
-        return total + unitPrice * quantity;
-      }, 0)
-      .toFixed(2),
-  );
 }
