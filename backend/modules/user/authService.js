@@ -12,6 +12,8 @@ const sendEmail = require("../../utils/sendEmail");
 
 const createToken = require("../../utils/createToken");
 const User = require("./models/userModel");
+const userRepository = require("./userRepository");
+const userSessionRepository = require("./userSessionRepository");
 
 const OAuthTemp = require("./models/oauthTempModel");
 const { uploadMixOfImages } = require('../../middlewares/uploadImageMiddleware');
@@ -247,7 +249,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
   const { name, email, password} = req.body;
 
   // Check if email already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await userRepository.findByEmail(email);
   if (existingUser) {
     return res.status(400).json({
       status: "fail",
@@ -256,7 +258,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
   }
 
   // Create user account
-  const user = await User.create({
+  const user = await userRepository.create({
     name,
     email,
     password,
@@ -626,7 +628,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
   }
 
   // Check if user still exists
-  const currentUser = await User.findById(decoded.userId);
+  const currentUser = await userRepository.findById(decoded.userId);
   if (!currentUser) {
     logger.warn("Protect failed: user no longer exists", {
       meta: {

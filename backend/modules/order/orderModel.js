@@ -10,13 +10,16 @@ const orderSchema = new mongoose.Schema(
     orderItems: [
       {
         product: {
-          type: mongoose.Schema.ObjectId,
-          ref: 'Product',
-          required: [true, 'Cart item must have a product ID'],
+          type: String,
+          required: [true, 'Order item must have a product ID'],
+        },
+        title: {
+          type: String,
         },
         quantity: {
           type: Number,
           default: 1,
+          min: [1, 'Quantity must be at least 1'],
         },
         price: {
           type: Number,
@@ -24,20 +27,17 @@ const orderSchema = new mongoose.Schema(
         },
       },
     ],
-
     totalOrderPrice: {
       type: Number,
       required: [true, 'Total order price is required'],
     },
     orderStatus: {
       type: String,
-      enum: ['pending', 'ready', 'cancelled'],
+      enum: ['pending', 'ready', 'cancelled', 'rejected'],
       default: 'pending',
     },
   },
   { timestamps: true }
 );
-
-
 
 module.exports = mongoose.model('Order', orderSchema);

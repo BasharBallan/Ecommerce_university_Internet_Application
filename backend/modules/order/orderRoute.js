@@ -56,16 +56,12 @@ router
  *         description: Unauthorized
  *       403:
  *         description: Forbidden (Admin only)
- */
-/**
- * @swagger
- * /api/v1/orders:
  *   post:
  *     summary: Create a new order
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
- *     description: Create a new order (User only, total price calculated server-side)
+ *     description: Create a new order (User only, total price calculated server-side, stock deducted via gRPC)
  *     requestBody:
  *       required: true
  *       content:
@@ -85,17 +81,19 @@ router
  *                   properties:
  *                     product:
  *                       type: string
- *                       example: "645a7b8e9f1a2b3c4d5e6f7a"
+ *                       example: "1"
  *                     quantity:
  *                       type: number
  *                       example: 2
  *     responses:
  *       201:
- *         description: Order created successfully
+ *         description: Order created successfully and inventory reserved/deducted via gRPC
  *       400:
- *         description: Invalid input data
+ *         description: Invalid input data, product out of stock, or insufficient quantity
  *       401:
  *         description: Unauthorized
+ *       503:
+ *         description: Inventory service unavailable (gRPC server stopped or timed out)
  */
 router
   .route('/')
@@ -133,7 +131,7 @@ router
  * @swagger
  * /api/v1/orders/{id}/status:
  *   put:
- *     summary: Update order status
+ *     summary: Update order status (pending, ready, cancelled, rejected)
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -155,22 +153,22 @@ router
  *             properties:
  *               orderStatus:
  *                 type: string
- *                 enum: [pending, ready, cancelled]
+ *                 enum: [pending, ready, cancelled, rejected]
  *                 example: "ready"
  *     responses:
  *       200:
- *         description: Order status updated successfully
+ *         description: Order status updated successfully (stock refunded on cancelled/rejected)
  *       400:
  *         description: Invalid status value
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden (Admin only)
+ *         description: Forbidden
  *       404:
  *         description: Order not found
  */
 router
   .route('/:id/status')
-  .put(authService.allowedTo('admin'), updateOrderStatus);
+  .put(authService.allowedTo('admin', 'user'), updateOrderStatus);
 
 module.exports = router;
