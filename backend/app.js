@@ -76,7 +76,7 @@ if (process.env.NODE_ENV === 'development') {
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: 50000, // Elevated for high-concurrency load testing
   message: 'Too many requests from this IP, please try again later',
 });
 app.use('/api', limiter);
