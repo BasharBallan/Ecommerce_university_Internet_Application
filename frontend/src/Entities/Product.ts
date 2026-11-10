@@ -3,41 +3,20 @@ export type ProductCategory =
   | "Bakery"
   | "Beverages"
   | "Snacks"
-  | "Canned"
+  | "Canned Goods"
   | "Meat"
-  | "Poultry"
-  | "Fruits"
-  | "Vegetables"
-  | "Grains"
-  | "Oils"
-  | "Pantry"
-  | "Spices"
-  | "Cleaning"
-  | "Household"
-  | "Personal Care"
-  | string;
+  | "Produce";
 
 export interface Product {
-  _id?: string;
-  id?: number | string;
+  _id: string;
   title: string;
-  name?: string;
-  slug?: string;
+  slug: string;
   description: string;
   quantity: number;
-  reservedqty?: number;
-  availableqty?: number;
-  status?: string;
   sold?: number;
   price: number;
-  discountPrice?: number;
-  imageCover?: string;
-  imageUrl?: string;
-  category?: ProductCategory;
-  categoryId?: string;
-  rating?: number;
-  reviewCount?: number;
-  isFeatured?: boolean;
+  imageCover: string;
+  category: ProductCategory;
   ratingsAverage?: number;
   ratingsQuantity?: number;
   createdAt?: string;
@@ -46,32 +25,22 @@ export interface Product {
 
 export interface ProductsResponse {
   status: string;
-  message?: string;
-  results?: number;
+  message: string;
+  results: number;
 
-  pagination?: {
-    currentPage: number;
-    limit?: number;
-    perPage?: number;
-    numberOfPages?: number;
-    totalPages?: number;
-    totalResults?: number;
-    total?: number;
-  };
   paginationResult?: {
     currentPage: number;
     limit: number;
     numberOfPages: number;
-    totalResults: number;
+    next?: number;
+    prev?: number;
   };
 
   data: Product[];
 }
 
-export type ProductResponse = ProductsResponse;
-
-export interface SingleProductResponse {
+export interface ProductResponse {
   status: string;
-  message?: string;
+  message: string;
   data: Product;
 }

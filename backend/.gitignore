@@ -5,9 +5,9 @@ config.env
 config.env.test
 
 
-uploads/``
+uploads
 
-logs/``
+logs
 
 TIC_Educational_Website-output.md
 TIC_Educational_Website-output.txt

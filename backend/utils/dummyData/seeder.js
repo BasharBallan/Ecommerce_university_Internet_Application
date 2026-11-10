@@ -1,74 +1,50 @@
-const fs = require("fs");
-const path = require("path");
-require("colors");
-const dotenv = require("dotenv");
+const fs = require('fs');
+const path = require('path');
+require('colors');
+const dotenv = require('dotenv');
 
-const Lecture = require("../../models/lectureModel");
-const Subject = require("../../models/subjectModel");
-const User = require("../../models/userModel");
+const Product = require('../../modules/product/productModel');
+const dbConnection = require('../../config/database');
 
-const dbConnection = require("../../config/database");
-
-dotenv.config({ path: path.join(__dirname, "../../config.env") });
+dotenv.config({ path: path.join(__dirname, '../../config.env') });
 
 // Connect DB
 dbConnection();
 
-// Read lectures.json
-const lectures = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "lectures.json"))
+// Read products.json
+const products = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'products.json'), 'utf-8')
 );
 
+// Insert data into DB
 const insertData = async () => {
   try {
-    const inserted = await Lecture.create(lectures);
-
-    console.log("Lectures Inserted".green.inverse);
-
-    // Update Subject + Doctor relations
-    for (const lec of inserted) {
-      await Subject.findByIdAndUpdate(lec.subjectId, {
-        $push: { lectures: lec._id }
-      });
-
-      await User.findByIdAndUpdate(lec.doctorId, {
-        $push: { "doctorData.lectures": lec._id }
-      });
-    }
-
-    console.log("\n===== Inserted Lectures =====\n".cyan);
-
-    inserted.forEach((lec, i) => {
-      console.log(`\n#${i + 1} ------------------------------`.yellow);
-      console.log(`ID: ${lec._id}`);
-      console.log(`Title: ${lec.title}`);
-      console.log(`Subject: ${lec.subjectId}`);
-      console.log(`Doctor: ${lec.doctorId}`);
-      console.log(`Description: ${lec.description}`);
-      console.log("--------------------------------------------------".yellow);
-    });
-
+    await Product.create(products);
+    console.log('Data Inserted Successfully!'.green.inverse);
     process.exit();
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.error(`${error}`.red.inverse);
     process.exit(1);
   }
 };
 
+// Delete data from DB
 const destroyData = async () => {
   try {
-    await Lecture.deleteMany({});
-    console.log("Lectures Deleted".red.inverse);
+    await Product.deleteMany();
+    console.log('Data Destroyed Successfully!'.red.inverse);
     process.exit();
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.error(`${error}`.red.inverse);
     process.exit(1);
   }
 };
 
-if (process.argv[2] === "-i") insertData();
-else if (process.argv[2] === "-d") destroyData();
-else {
-  console.log("Use -i to insert or -d to delete".yellow);
+if (process.argv[2] === '-i') {
+  insertData();
+} else if (process.argv[2] === '-d') {
+  destroyData();
+} else {
+  console.log('Use -i to insert or -d to delete'.yellow);
   process.exit();
 }

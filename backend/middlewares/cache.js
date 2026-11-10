@@ -1,5 +1,5 @@
 // middlewares/cache.js
-const cacheService = require("../services/cacheService");
+const cacheService = require("../utils/cacheService");
 
 exports.cache = (keyBuilder, ttl = 60) => {
   return async (req, res, next) => {
