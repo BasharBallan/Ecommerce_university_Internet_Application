@@ -42,9 +42,12 @@ const getProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate and store ETag
-  const etag = generateETag(data);
-  knownETags.set(resourceKey, etag);
+  // Generate and store ETag (reuse pre-calculated ETag on cache HIT)
+  let etag = knownETags.get(resourceKey);
+  if (!etag || !fromCache) {
+    etag = generateETag(data);
+    knownETags.set(resourceKey, etag);
+  }
 
   if (clientEtag && clientEtag === etag) {
     res.setHeader('ETag', etag);
@@ -83,8 +86,11 @@ const getProducts = asyncHandler(async (req, res) => {
 
   const { data, fromCache } = await productService.getAllProducts(req.query, bypassRedis);
 
-  const etag = generateETag(data);
-  knownETags.set(resourceKey, etag);
+  let etag = knownETags.get(resourceKey);
+  if (!etag || !fromCache) {
+    etag = generateETag(data);
+    knownETags.set(resourceKey, etag);
+  }
 
   if (clientEtag && clientEtag === etag) {
     res.setHeader('ETag', etag);

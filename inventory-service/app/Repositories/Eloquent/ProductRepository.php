@@ -10,10 +10,11 @@ class ProductRepository implements ProductRepositoryInterface
 {
     /**
      * Get all products with optional filters and pagination.
+     * Fixes N+1 Query Problem using Eager Loading (with('inventory')).
      */
     public function getAll(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        $query = Product::query();
+        $query = Product::with('inventory');
 
         // Filter by category
         if (!empty($filters['category'])) {
@@ -48,11 +49,11 @@ class ProductRepository implements ProductRepositoryInterface
     }
 
     /**
-     * Find a product by ID.
+     * Find a product by ID with eager-loaded inventory.
      */
     public function findById(int|string $id): ?Product
     {
-        return Product::find($id);
+        return Product::with('inventory')->find($id);
     }
 
     /**

@@ -1,16 +1,21 @@
 import ApiClient from "../apiServices/api_client";
-import type { ProductResponse, ProductsResponse } from "../Entities/Product";
+import type { ProductsResponse, SingleProductResponse } from "../Entities/Product";
 
 const productsApi = new ApiClient<ProductsResponse>(
   "/products"
 );
 
-const productApi = new ApiClient<ProductResponse>(
+const productApi = new ApiClient<SingleProductResponse>(
   "/products"
 );
 
-export const getProducts = () => {
-  return productsApi.getAll();
+export const getProducts = (params?: { limit?: number; page?: number; category?: string }) => {
+  return productsApi.getAll({
+    params: {
+      limit: 50,
+      ...params,
+    },
+  });
 };
 
 export const getProductById = async (id: string) => {
