@@ -1,9 +1,29 @@
 const crypto = require('crypto');
 const asyncHandler = require('express-async-handler');
 const productService = require('./productService');
+const cacheService = require('../../utils/cacheService');
 
 // In-memory mapping of resource key -> current ETag for instant 304 validation
 const knownETags = new Map();
+
+// Event-driven decoupled cache invalidation for HTTP ETags
+cacheService.on('invalidated', (key) => {
+  if (knownETags.has(key)) {
+    knownETags.delete(key);
+    console.log(`🏷️ [ETag] In-memory ETag purged for: ${key}`);
+  }
+});
+
+cacheService.on('invalidatedPattern', (pattern) => {
+  if (pattern === 'products:list:*') {
+    for (const key of knownETags.keys()) {
+      if (key.startsWith('products:list:')) {
+        knownETags.delete(key);
+      }
+    }
+    console.log(`🏷️ [ETag] In-memory ETags purged for all catalog lists`);
+  }
+});
 
 /**
  * Helper to generate MD5 ETag from response body.
@@ -42,9 +62,12 @@ const getProduct = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate and store ETag
-  const etag = generateETag(data);
-  knownETags.set(resourceKey, etag);
+  // Generate and store ETag (reuse pre-calculated ETag on cache HIT)
+  let etag = knownETags.get(resourceKey);
+  if (!etag || !fromCache) {
+    etag = generateETag(data);
+    knownETags.set(resourceKey, etag);
+  }
 
   if (clientEtag && clientEtag === etag) {
     res.setHeader('ETag', etag);
@@ -83,8 +106,11 @@ const getProducts = asyncHandler(async (req, res) => {
 
   const { data, fromCache } = await productService.getAllProducts(req.query, bypassRedis);
 
-  const etag = generateETag(data);
-  knownETags.set(resourceKey, etag);
+  let etag = knownETags.get(resourceKey);
+  if (!etag || !fromCache) {
+    etag = generateETag(data);
+    knownETags.set(resourceKey, etag);
+  }
 
   if (clientEtag && clientEtag === etag) {
     res.setHeader('ETag', etag);

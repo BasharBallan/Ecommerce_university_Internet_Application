@@ -17,6 +17,30 @@ class UpdateProductRequest extends FormRequest
     }
 
     /**
+     * Prepare inputs before validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('imageCover') && !$this->has('image_cover')) {
+            $this->merge(['image_cover' => $this->input('imageCover')]);
+        }
+
+        $imageFile = $this->file('imageCover') ?? $this->file('image_cover');
+        if ($imageFile && $imageFile->isValid()) {
+            $destinationPath = public_path('uploads/products');
+            if (!file_exists($destinationPath)) {
+                @mkdir($destinationPath, 0777, true);
+            }
+            $filename = time() . '_' . uniqid() . '.' . $imageFile->getClientOriginalExtension();
+            $imageFile->move($destinationPath, $filename);
+
+            $this->files->remove('image_cover');
+            $this->files->remove('imageCover');
+            $this->merge(['image_cover' => '/uploads/products/' . $filename]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      */
     public function rules(): array
@@ -26,7 +50,7 @@ class UpdateProductRequest extends FormRequest
             'description' => 'sometimes|required|string|min:20',
             'quantity' => 'sometimes|required|integer|min:0',
             'price' => 'sometimes|required|numeric|min:0|max:200000',
-            'image_cover' => 'sometimes|required|string',
+            'image_cover' => 'nullable',
             'category' => 'sometimes|required|string|in:Dairy,Bakery,Beverages,Snacks,Canned,Meat,Poultry,Fruits,Vegetables,Grains,Oils,Pantry,Spices,Cleaning,Household,Personal Care',
             'ratings_average' => 'nullable|numeric|between:1.0,5.0',
             'ratings_quantity' => 'nullable|integer|min:0',
@@ -44,4 +68,3 @@ class UpdateProductRequest extends FormRequest
         ], 422));
     }
 }
-

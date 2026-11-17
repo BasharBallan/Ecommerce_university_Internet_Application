@@ -6,7 +6,7 @@
 	"scripts": {
 		"start:dev": "node --watch server.js",
 		"start": "NODE_ENV=production node server.js",
-		"test": "cross-env NODE_ENV=test jest --runInBand",
+		"test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
 		"worker:email": "node workers/emailWorker.js",
 		"dev": "node --watch server.js"
 	},

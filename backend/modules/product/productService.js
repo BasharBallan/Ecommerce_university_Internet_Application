@@ -102,7 +102,8 @@ class ProductService {
   async invalidateProductCache(productId) {
     const key = `product:${productId}`;
     await cacheService.del(key);
-    console.log(`🧹 Cache invalidated for product ID: ${productId}`);
+    await cacheService.delByPattern('products:list:*');
+    console.log(`🧹 Cache invalidated for product ID: ${productId} and all product lists`);
   }
 }
 

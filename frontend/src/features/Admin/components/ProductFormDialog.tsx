@@ -140,12 +140,6 @@ export default function ProductFormDialog({
   };
 
   const submitForm = (values: ProductFormValues) => {
-    // Validate image cover presence for new products
-    if (!initialProduct && !imageFile) {
-      setImageError("Product Image cover is required.");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("title", values.title.trim());
     formData.append("description", values.description.trim());
@@ -163,6 +157,14 @@ export default function ProductFormDialog({
 
     if (imageFile) {
       formData.append("imageCover", imageFile);
+      formData.append("image_cover", imageFile);
+    } else if (initialProduct?.imageCover) {
+      formData.append("imageCover", initialProduct.imageCover);
+      formData.append("image_cover", initialProduct.imageCover);
+    } else {
+      const defaultImg = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80";
+      formData.append("imageCover", defaultImg);
+      formData.append("image_cover", defaultImg);
     }
 
     onSubmit(formData);

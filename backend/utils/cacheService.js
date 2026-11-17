@@ -5,9 +5,10 @@
 // It includes helper methods for getting, setting, and deleting cached data.
 // ======================================================================
 
+const EventEmitter = require("events");
 const redis = require("../config/redis");
 
-class CacheService {
+class CacheService extends EventEmitter {
   // ------------------------------------------------------
   // @desc    Get cached value by key
   // @param   {string} key - Redis key
@@ -42,7 +43,9 @@ class CacheService {
   // ------------------------------------------------------
   async del(key) {
     try {
-      return await redis.del(key);
+      const res = await redis.del(key);
+      this.emit("invalidated", key);
+      return res;
     } catch (err) {
       console.error(`Cache DEL Error for key [${key}]:`, err);
     }
@@ -57,9 +60,32 @@ class CacheService {
       if (!Array.isArray(keys) || keys.length === 0) return;
       for (const key of keys) {
         await redis.del(key);
+        this.emit("invalidated", key);
       }
     } catch (err) {
       console.error("Cache DELMANY Error:", err);
+    }
+  }
+
+  // ------------------------------------------------------
+  // @desc    Delete all keys matching pattern (e.g. "products:list:*")
+  // @param   {string} pattern
+  // ------------------------------------------------------
+  async delByPattern(pattern) {
+    try {
+      if (typeof redis.keys === "function") {
+        const matchedKeys = await redis.keys(pattern);
+        if (Array.isArray(matchedKeys) && matchedKeys.length > 0) {
+          for (const key of matchedKeys) {
+            await redis.del(key);
+            this.emit("invalidated", key);
+          }
+          console.log(`🧹 [CacheService] Purged ${matchedKeys.length} key(s) matching [${pattern}]`);
+        }
+      }
+      this.emit("invalidatedPattern", pattern);
+    } catch (err) {
+      console.error(`Cache delByPattern Error for [${pattern}]:`, err);
     }
   }
 }
