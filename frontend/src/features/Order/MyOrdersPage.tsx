@@ -15,8 +15,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { getPusherClient } from "../../apiServices/pusherClient";
+import { getToken } from "../../apiServices/cookie";
 import { useMyOrders } from "./OrderService";
 import type { OrderStatus } from "./types";
 
@@ -55,11 +58,47 @@ const formatPrice = (amount: number) =>
 
 export default function MyOrdersPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
 
   const { data: orders = [], isLoading, isError, error, refetch } = useMyOrders();
+
+  // Real-time update for customer's orders list via Soketi / Pusher
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    // Decode user id from token
+    let userId = "";
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const decodedJson = JSON.parse(atob(payloadBase64));
+      userId = decodedJson.userId;
+    } catch {}
+
+    if (!userId) return;
+
+    const pusher = getPusherClient();
+    const userChannel = pusher.subscribe(`private-user-${userId}`);
+
+    userChannel.bind("ORDER_STATUS_UPDATED", (payload: any) => {
+      console.log("⚡ [Soketi/MyOrders] Order status updated in real time:", payload);
+      queryClient.invalidateQueries({ queryKey: ["myOrders"] });
+    });
+
+    userChannel.bind("ORDER_CREATED", () => {
+      console.log("⚡ [Soketi/MyOrders] Order created in real time");
+      queryClient.invalidateQueries({ queryKey: ["myOrders"] });
+    });
+
+    return () => {
+      userChannel.unbind_all();
+      pusher.unsubscribe(`private-user-${userId}`);
+      pusher.disconnect();
+    };
+  }, [queryClient]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {

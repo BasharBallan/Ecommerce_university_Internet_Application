@@ -16,6 +16,12 @@ services:
       - DB_URI=mongodb://mongo-db:27017/tic_db
       - MONGO_URI=mongodb://mongo-db:27017/tic_db
       - INVENTORY_GRPC_URL=inventory-service:50051
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+      - PUSHER_APP_ID=app-id
+      - PUSHER_APP_KEY=app-key
+      - PUSHER_APP_SECRET=app-secret
+      - PUSHER_HOST=soketi
+      - PUSHER_PORT=6001
     volumes:
       # 1. Bind mount local backend directory to /app for real-time code changes (Hot-Reload)
       - ./backend:/app
@@ -28,6 +34,8 @@ services:
       - redis
       - mongo-db
       - inventory-service
+      - rabbitmq
+      - soketi
 
   # Laravel gRPC Inventory Microservice
   inventory-service:
@@ -101,8 +109,59 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  # RabbitMQ Message Broker with Management Web Dashboard
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: tic-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # AMQP Protocol
+      - "15672:15672"   # Management Web UI (guest / guest)
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  # Soketi WebSockets Server (Off-the-shelf Pusher Protocol v7 server)
+  soketi:
+    image: quay.io/soketi/soketi:1.4-16-alpine
+    container_name: tic-soketi
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    environment:
+      - SOKETI_DEBUG=1
+      - SOKETI_DEFAULT_APP_ID=app-id
+      - SOKETI_DEFAULT_APP_KEY=app-key
+      - SOKETI_DEFAULT_APP_SECRET=app-secret
+
+  # Dedicated Asynchronous Background Worker for Order Email Processing & DLQ
+  email-worker:
+    image: ecommerce_university_internet_application-backend:latest
+    container_name: tic-email-worker
+    restart: unless-stopped
+    command: ["node", "workers/emailWorker.js"]
+    env_file:
+      - ./backend/config.env
+    environment:
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+      - DB_URI=mongodb://mongo-db:27017/tic_db
+      - MONGO_URI=mongodb://mongo-db:27017/tic_db
+      - INVENTORY_GRPC_URL=inventory-service:50051
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/logs:/app/logs
+    depends_on:
+      - rabbitmq
+      - mongo-db
+
 volumes:
   redis-data:
   mongo-data:
   mysql-inventory-data:
   mysql-inventory-replica-data:
+  rabbitmq-data:

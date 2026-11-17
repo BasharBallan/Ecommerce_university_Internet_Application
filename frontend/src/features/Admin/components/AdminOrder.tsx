@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { getPusherClient } from "../../../apiServices/pusherClient";
+import { getToken } from "../../../apiServices/cookie";
 import {
   Box,
   Chip,
@@ -137,6 +139,34 @@ export default function AdminOrdersPage() {
       );
     },
   });
+
+  // Real-Time Pusher / Soketi Connection: Subscribes strictly to 'private-admin'
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+
+    const pusher = getPusherClient();
+    const adminChannel = pusher.subscribe("private-admin");
+
+    // Requirement: When a new order is created, it appears immediately on admin board without reload
+    adminChannel.bind("NEW_ORDER_CREATED", (payload: any) => {
+      console.log("⚡ [Soketi/Admin] Live New Order Received:", payload);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders-page"] });
+      setSuccessMsg(`⚡ New order received: #${payload.order?._id || ""}!`);
+    });
+
+    // Requirement: When any order status changes, admin board updates immediately without reload
+    adminChannel.bind("ORDER_STATUS_UPDATED", (payload: any) => {
+      console.log("⚡ [Soketi/Admin] Live Order Status Updated:", payload);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders-page"] });
+    });
+
+    return () => {
+      adminChannel.unbind_all();
+      pusher.unsubscribe("private-admin");
+      pusher.disconnect();
+    };
+  }, [queryClient]);
 
   // Search and filter logic
   const filteredOrders = useMemo(() => {

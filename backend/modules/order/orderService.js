@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const orderRepository = require('./orderRepository');
+const userRepository = require('../user/userRepository');
 const ApiError = require('../../utils/apiError');
 const cacheService = require('../../utils/cacheService');
+const { sendOrderConfirmationJob } = require('../../queues/emailQueue');
 const {
   getProduct,
   checkStock,
@@ -163,14 +165,50 @@ class OrderService {
       cacheService.delByPattern('products:list:*').catch(() => {});
       console.log(`🧹 [OrderService] Cache & ETag invalidated for products [${reservedItems.map((r) => r.product).join(', ')}] on order creation #${order._id}`);
 
-      // 7. Real-time notification via Socket.io
-      if (global.io) {
-        global.io.to(userId.toString()).emit('notification', {
+      // 7. Real-time notification via Pusher / Soketi & Socket.io
+      try {
+        const pusher = require('../../config/pusher');
+        // Broadcast immediately and exclusively to Admin Dashboard
+        pusher.trigger('private-admin', 'NEW_ORDER_CREATED', {
+          type: 'NEW_ORDER_CREATED',
+          message: `New order #${order._id} received`,
+          order,
+        });
+
+        // Broadcast to Customer private channel
+        pusher.trigger(`private-user-${userId.toString()}`, 'ORDER_CREATED', {
           type: 'ORDER_CREATED',
           message: `Your order #${order._id} has been created successfully`,
           order,
         });
+      } catch (pusherErr) {
+        console.warn('⚠️ [OrderService] Pusher trigger error:', pusherErr.message);
       }
+
+      // 8. Asynchronous Processing: Dispatch Order Confirmation Email to RabbitMQ
+      (async () => {
+        try {
+          const userDoc = await userRepository.findById(userId);
+          const userEmail = userDoc ? userDoc.email : 'customer@example.com';
+          const userName = userDoc ? userDoc.name : 'Valued Customer';
+
+          await sendOrderConfirmationJob({
+            orderId: order._id.toString(),
+            userId: userId.toString(),
+            userEmail,
+            userName,
+            totalPrice: order.totalOrderPrice,
+            orderItems: processedOrderItems.map((item) => ({
+              productTitle: item.title,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            createdAt: order.createdAt,
+          });
+        } catch (jobErr) {
+          console.error('⚠️ [OrderService] Failed to dispatch RabbitMQ email job:', jobErr.message);
+        }
+      })();
 
       return order;
     } catch (error) {
@@ -237,14 +275,26 @@ class OrderService {
     }
 
     const updatedOrder = await orderRepository.updateStatus(orderId, orderStatus);
+    const ownerId = currentOrder.user._id ? currentOrder.user._id.toString() : currentOrder.user.toString();
+    const payload = {
+      type: 'ORDER_STATUS_UPDATED',
+      orderId: currentOrder._id.toString(),
+      orderStatus: orderStatus,
+      order: updatedOrder,
+      message: `Your order #${currentOrder._id} status was updated to: ${orderStatus}`,
+    };
 
-    if (global.io) {
-      global.io.to(currentOrder.user.toString()).emit('notification', {
-        type: 'ORDER_STATUS_CHANGED',
-        message: `Your order #${currentOrder._id} status was updated to: ${orderStatus}`,
-        orderId: currentOrder._id,
-        status: orderStatus,
-      });
+    // Real-time broadcast via Pusher / Soketi
+    try {
+      const pusher = require('../../config/pusher');
+      // 1. Customer specific order room
+      pusher.trigger(`private-order-${currentOrder._id.toString()}`, 'ORDER_STATUS_UPDATED', payload);
+      // 2. Customer user channel
+      pusher.trigger(`private-user-${ownerId}`, 'ORDER_STATUS_UPDATED', payload);
+      // 3. Admin Room
+      pusher.trigger('private-admin', 'ORDER_STATUS_UPDATED', payload);
+    } catch (pusherErr) {
+      console.warn('⚠️ [OrderService] Pusher status trigger error:', pusherErr.message);
     }
 
     return updatedOrder;
