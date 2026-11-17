@@ -5,14 +5,14 @@ const {
   getMyOrders,
   createOrder,
   updateOrderStatus,
-} = require('./orderService');
+} = require('./orderController');
 
-const authService = require('../user/authService');
+const authController = require('../user/authController');
 
 const router = express.Router();
 
 // All order routes require authentication
-router.use(authService.protect);
+router.use(authController.protect);
 
 /**
  * @swagger
@@ -38,7 +38,7 @@ router.use(authService.protect);
  */
 router
   .route('/my-orders')
-  .get(authService.allowedTo('user'), getMyOrders);
+  .get(authController.allowedTo('user'), getMyOrders);
 
 /**
  * @swagger
@@ -97,8 +97,8 @@ router
  */
 router
   .route('/')
-  .get(authService.allowedTo('admin'), getOrders)
-  .post(authService.allowedTo('user'), createOrder);
+  .get(authController.allowedTo('admin'), getOrders)
+  .post(authController.allowedTo('user'), createOrder);
 
 /**
  * @swagger
@@ -125,7 +125,7 @@ router
  */
 router
   .route('/:id')
-  .get(authService.allowedTo('user', 'admin'), getOrder);
+  .get(authController.allowedTo('user', 'admin'), getOrder);
 
 /**
  * @swagger
@@ -169,6 +169,6 @@ router
  */
 router
   .route('/:id/status')
-  .put(authService.allowedTo('admin', 'user'), updateOrderStatus);
+  .put(authController.allowedTo('admin', 'user'), updateOrderStatus);
 
 module.exports = router;

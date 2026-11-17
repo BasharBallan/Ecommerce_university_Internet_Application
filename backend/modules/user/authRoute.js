@@ -41,7 +41,7 @@ const {
    googleInitService,
    setPasswordService,
    resendVerificationCode,
-} = require("./authService");
+} = require("./authController");
 
 /**
  * @swagger

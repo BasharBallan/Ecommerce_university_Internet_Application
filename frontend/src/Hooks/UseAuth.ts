@@ -114,7 +114,7 @@ export const useAuth = () => {
 
     mutationFn: async (credentials: LoginCredentials) => {
       const response = await apiClient.post(credentials);
-console.log(response.data)
+      console.log(response.data)
       if (response.status !== "success" || !response.token) {
         throw new Error(response.message || "Login failed");
       }
@@ -138,6 +138,8 @@ console.log(response.data)
       // التوجيه الذكي حسب الـ Role القادم من الباك إند
       if (backendUser.role === "admin") {
         navigate("/admin"); // توجيه الأدمن إلى لوحة التحكم
+      } else if (backendUser.role === "manager") {
+        navigate("/warehouse"); // توجيه المدير إلى لوحة إدارة المستودع
       } else {
         navigate("/"); // توجيه المستخدم العادي إلى الصفحة الرئيسية
       }

@@ -4,19 +4,19 @@ namespace App\Repositories\Contracts;
 
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
 
 interface ProductRepositoryInterface
 {
     /**
      * Get all products with optional filters and pagination.
+     * Fixes N+1 Query Problem using Eager Loading (with('inventory')).
      */
     public function getAll(array $filters = [], int $perPage = 10): LengthAwarePaginator;
 
     /**
-     * Find a product by its ID or fail.
+     * Find a product by its ID (with optional onWriteConnection flag for lag resilience).
      */
-    public function findById(int|string $id): ?Product;
+    public function findById(int|string $id, bool $onWriteConnection = false): ?Product;
 
     /**
      * Create a new product.
@@ -33,4 +33,3 @@ interface ProductRepositoryInterface
      */
     public function delete(int|string $id): bool;
 }
-
