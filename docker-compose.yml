@@ -43,14 +43,19 @@ services:
       - APP_KEY=base64:OX/6C8Gpdc1MisbnZijWxhdY4w0/VpMy4vOMKTwaFas=
       - DB_CONNECTION=mysql
       - DB_HOST=mysql-inventory
+      - DB_READ_HOST=mysql-inventory-replica
       - DB_PORT=3306
       - DB_DATABASE=inventory_db
       - DB_USERNAME=root
       - DB_PASSWORD=root
+    volumes:
+      - ./inventory-service:/app
+      - /app/vendor
     depends_on:
       - mysql-inventory
+      - mysql-inventory-replica
 
-  # MySQL Dedicated Database for Inventory Microservice
+  # MySQL Dedicated Database for Inventory Microservice (Primary / Write Host)
   mysql-inventory:
     image: mysql:8.0
     container_name: tic-mysql-inventory
@@ -62,6 +67,19 @@ services:
       - "3307:3306"
     volumes:
       - mysql-inventory-data:/var/lib/mysql
+
+  # MySQL Read Replica for Inventory Microservice (Secondary / Read Host)
+  mysql-inventory-replica:
+    image: mysql:8.0
+    container_name: tic-mysql-inventory-replica
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: inventory_db
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql-inventory-replica-data:/var/lib/mysql
 
   # Redis In-Memory Cache Service
   redis:
@@ -87,3 +105,4 @@ volumes:
   redis-data:
   mongo-data:
   mysql-inventory-data:
+  mysql-inventory-replica-data:

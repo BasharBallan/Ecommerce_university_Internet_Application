@@ -25,7 +25,7 @@ class InventoryGrpcService implements InventoryServiceInterface
      */
     private function resolveInventory(string $identifier, bool $lock = false): ?Inventory
     {
-        $query = Inventory::where('product_id', $identifier);
+        $query = Inventory::onWriteConnection()->where('product_id', $identifier);
         if ($lock) {
             $query->lockForUpdate();
         }
@@ -33,12 +33,12 @@ class InventoryGrpcService implements InventoryServiceInterface
 
         if (!$inventory) {
             // Check if identifier is product ID or slug
-            $product = Product::where('id', $identifier)
+            $product = Product::onWriteConnection()->where('id', $identifier)
                 ->orWhere('slug', $identifier)
                 ->first();
 
             if ($product) {
-                $query = Inventory::where('product_id', (string) $product->id);
+                $query = Inventory::onWriteConnection()->where('product_id', (string) $product->id);
                 if ($lock) {
                     $query->lockForUpdate();
                 }
@@ -46,13 +46,13 @@ class InventoryGrpcService implements InventoryServiceInterface
 
                 // If inventory record doesn't exist yet for this product, create it on the fly
                 if (!$inventory) {
-                    $inventory = Inventory::create([
+                    $inventory = Inventory::onWriteConnection()->create([
                         'product_id' => (string) $product->id,
                         'quantity' => $product->quantity,
                         'reserved' => 0,
                     ]);
                     if ($lock) {
-                        $inventory = Inventory::where('id', $inventory->id)->lockForUpdate()->first();
+                        $inventory = Inventory::onWriteConnection()->where('id', $inventory->id)->lockForUpdate()->first();
                     }
                 }
             }
@@ -222,16 +222,16 @@ class InventoryGrpcService implements InventoryServiceInterface
     {
         $productId = $in->getProductId();
 
-        $product = Product::with('inventory')
+        $product = Product::onWriteConnection()->with('inventory')
             ->where('id', $productId)
             ->orWhere('slug', $productId)
             ->first();
 
         if (!$product) {
             // Also check if productId matches an inventory record's product_id
-            $inventory = Inventory::where('product_id', $productId)->first();
+            $inventory = Inventory::onWriteConnection()->where('product_id', $productId)->first();
             if ($inventory && is_numeric($inventory->product_id)) {
-                $product = Product::with('inventory')->find($inventory->product_id);
+                $product = Product::onWriteConnection()->with('inventory')->find($inventory->product_id);
             }
         }
 

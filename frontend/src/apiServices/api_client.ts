@@ -19,6 +19,10 @@ const createInstance = (baseURL: string): AxiosInstance => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // When sending FormData, delete Content-Type so browser sets boundary automatically
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    }
     return config;
   });
 
@@ -67,7 +71,7 @@ class ApiClient<TResponse, TRequest = unknown> {
     const res = await this.client.post<TResponse>(
       targetUrl,
       data,
-      isFormData ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+      isFormData ? { headers: { "Content-Type": undefined } } : undefined
     );
     return res.data;
   }
@@ -75,10 +79,17 @@ class ApiClient<TResponse, TRequest = unknown> {
   async update(id: string | number, data: Partial<TRequest>): Promise<TResponse> {
     const isFormData = data instanceof FormData;
     const targetUrl = id ? `${this.endpoint}/${id}` : this.endpoint;
+    if (isFormData) {
+      (data as FormData).append('_method', 'PUT');
+      const res = await this.client.post<TResponse>(targetUrl, data, {
+        headers: { "Content-Type": undefined },
+      });
+      return res.data;
+    }
     const res = await this.client.put<TResponse>(
       targetUrl,
       data,
-      isFormData ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+      undefined
     );
     return res.data;
   }
@@ -89,7 +100,7 @@ class ApiClient<TResponse, TRequest = unknown> {
     const res = await this.client.put<TResponse>(
       targetUrl,
       data,
-      isFormData ? { headers: { "Content-Type": "multipart/form-data" } } : undefined
+      isFormData ? { headers: { "Content-Type": undefined } } : undefined
     );
     return res.data;
   }

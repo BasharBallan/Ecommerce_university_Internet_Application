@@ -11,6 +11,7 @@ class ProductRepository implements ProductRepositoryInterface
     /**
      * Get all products with optional filters and pagination.
      * Fixes N+1 Query Problem using Eager Loading (with('inventory')).
+     * Routes read queries to the Read Replica.
      */
     public function getAll(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
@@ -50,14 +51,27 @@ class ProductRepository implements ProductRepositoryInterface
 
     /**
      * Find a product by ID with eager-loaded inventory.
+     * Queries the Read Replica first, falling back to Primary Write connection
+     * if replication lag occurs.
      */
-    public function findById(int|string $id): ?Product
+    public function findById(int|string $id, bool $onWriteConnection = false): ?Product
     {
-        return Product::with('inventory')->find($id);
+        if ($onWriteConnection) {
+            return Product::onWriteConnection()->with('inventory')->find($id);
+        }
+
+        $product = Product::with('inventory')->find($id);
+
+        // Replication lag fallback: verify with primary before returning null
+        if (!$product) {
+            $product = Product::onWriteConnection()->with('inventory')->find($id);
+        }
+
+        return $product;
     }
 
     /**
-     * Create a new product.
+     * Create a new product on the Primary Write Host.
      */
     public function create(array $data): Product
     {
@@ -65,11 +79,11 @@ class ProductRepository implements ProductRepositoryInterface
     }
 
     /**
-     * Update an existing product.
+     * Update an existing product on the Primary Write Host.
      */
     public function update(int|string $id, array $data): ?Product
     {
-        $product = $this->findById($id);
+        $product = $this->findById($id, true);
 
         if (!$product) {
             return null;
@@ -81,11 +95,11 @@ class ProductRepository implements ProductRepositoryInterface
     }
 
     /**
-     * Delete a product by ID.
+     * Delete a product by ID from the Primary Write Host.
      */
     public function delete(int|string $id): bool
     {
-        $product = $this->findById($id);
+        $product = $this->findById($id, true);
 
         if (!$product) {
             return false;
@@ -94,4 +108,3 @@ class ProductRepository implements ProductRepositoryInterface
         return (bool) $product->delete();
     }
 }
-

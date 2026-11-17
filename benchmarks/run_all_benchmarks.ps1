@@ -7,7 +7,7 @@ param (
 
 $ErrorActionPreference = "Continue"
 
-$BenchDir = "C:\Users\micha\Desktop\KK\Internet App\New folder\Ecommerce_university_Internet_Application\benchmarks"
+$BenchDir = if ($PSScriptRoot) { $PSScriptRoot } else { "C:\Users\micha\Desktop\KK\Internet App\New folder\Ecommerce_university_Internet_Application\benchmarks" }
 $K6Token = "e785f40255a1565a45a558329fc9501365cdc28c530e7f08a4bf0c321f2415e8"
 
 $tests = @(
@@ -19,7 +19,7 @@ $tests = @(
 
 Write-Host ""
 Write-Host "==========================================================================================" -ForegroundColor Cyan
-Write-Host "   🚀 E-Commerce Benchmarks Runner (VUs: $VUs | Duration: $Duration)" -ForegroundColor Yellow
+Write-Host "    E-Commerce Benchmarks Runner (VUs: $VUs | Duration: $Duration)" -ForegroundColor Yellow
 Write-Host "==========================================================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -28,7 +28,7 @@ $summary = @()
 foreach ($t in $tests) {
     Write-Host ""
     Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor Cyan
-    Write-Host "▶ Running: $($t.Name)..." -ForegroundColor Yellow
+    Write-Host " Running: $($t.Name)..." -ForegroundColor Yellow
     Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor Cyan
 
     $testFile = $t.File
@@ -41,16 +41,16 @@ foreach ($t in $tests) {
     Write-Host ($outText -join "`n")
 
     $reqs = "-"
-    $rps  = "-"
-    $med  = "-"
-    $p90  = "-"
-    $p95  = "-"
-    $p99  = "-"
+    $rps = "-"
+    $med = "-"
+    $p90 = "-"
+    $p95 = "-"
+    $p99 = "-"
 
     foreach ($line in $outText) {
         if ($line -match 'http_reqs\.*:\s*(\d+)\s+([\d\.]+)/s') {
             $reqs = $matches[1]
-            $rps  = $matches[2]
+            $rps = $matches[2]
         }
         if ($line -match 'http_req_duration') {
             if ($line -match 'med=([^\s]+)') { $med = $matches[1] }
@@ -73,10 +73,10 @@ foreach ($t in $tests) {
 
 Write-Host ""
 Write-Host "==========================================================================================" -ForegroundColor Cyan
-Write-Host "   📊 FINAL BENCHMARKS COMPARISON SUMMARY" -ForegroundColor Yellow
+Write-Host "   FINAL BENCHMARKS COMPARISON SUMMARY" -ForegroundColor Yellow
 Write-Host "==========================================================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host ($summary | Format-Table -AutoSize | Out-String) -ForegroundColor White
 Write-Host "==========================================================================================" -ForegroundColor Cyan
-Write-Host "✔ All 4 benchmarks executed and comparison table generated successfully!" -ForegroundColor Green
+Write-Host " All 4 benchmarks executed and comparison table generated successfully!" -ForegroundColor Green
 Write-Host ""

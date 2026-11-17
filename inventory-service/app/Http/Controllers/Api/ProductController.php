@@ -6,17 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
-use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\Contracts\ProductServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    protected ProductRepositoryInterface $productRepository;
+    /**
+     * The controller now delegates all business logic to the ProductService layer.
+     * The ProductService interacts with the ProductRepository, which interacts with Eloquent.
+     */
+    protected ProductServiceInterface $productService;
 
-    public function __construct(ProductRepositoryInterface $productRepository)
+    public function __construct(ProductServiceInterface $productService)
     {
-        $this->productRepository = $productRepository;
+        $this->productService = $productService;
     }
 
     /**
@@ -28,7 +32,7 @@ class ProductController extends Controller
         $perPage = (int) $request->input('limit', 50);
         $filters = $request->only(['category', 'keyword', 'min_price', 'max_price', 'sort_by', 'sort_order']);
 
-        $products = $this->productRepository->getAll($filters, $perPage);
+        $products = $this->productService->getAll($filters, $perPage);
 
         return response()->json([
             'status' => 'success',
@@ -49,7 +53,7 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = $this->productRepository->create($request->validated());
+        $product = $this->productService->create($request->validated());
 
         return response()->json([
             'status' => 'success',
@@ -64,7 +68,7 @@ class ProductController extends Controller
      */
     public function show(int|string $id): JsonResponse
     {
-        $product = $this->productRepository->findById($id);
+        $product = $this->productService->findById($id);
 
         if (!$product) {
             return response()->json([
@@ -85,7 +89,7 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, int|string $id): JsonResponse
     {
-        $product = $this->productRepository->update($id, $request->validated());
+        $product = $this->productService->update($id, $request->validated());
 
         if (!$product) {
             return response()->json([
@@ -107,7 +111,7 @@ class ProductController extends Controller
      */
     public function destroy(int|string $id): JsonResponse
     {
-        $deleted = $this->productRepository->delete($id);
+        $deleted = $this->productService->delete($id);
 
         if (!$deleted) {
             return response()->json([
@@ -121,5 +125,12 @@ class ProductController extends Controller
             'message' => 'Product deleted successfully',
         ], 200);
     }
-}
 
+    /**
+     * Getter for service instance (preserves testability).
+     */
+    public function getProductService(): ProductServiceInterface
+    {
+        return $this->productService;
+    }
+}

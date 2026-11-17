@@ -26,7 +26,9 @@ class ProductResource extends JsonResource
             'reservedqty' => $reservedQty,
             'status' => $this->quantity > 0 ? 'in_stock' : 'out_of_stock',
             'price' => (float) $this->price,
-            'imageCover' => $this->image_cover,
+            'imageCover' => !empty($this->image_cover) && !str_starts_with($this->image_cover, 'http')
+                ? 'http://localhost:8001' . (str_starts_with($this->image_cover, '/') ? '' : '/') . $this->image_cover
+                : ($this->image_cover ?: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=80'),
             'category' => $this->category,
             'ratingsAverage' => (float) $this->ratings_average,
             'ratingsQuantity' => (int) $this->ratings_quantity,

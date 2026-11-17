@@ -57,6 +57,13 @@ if (useLocalRedis || !url || !token) {
         return null;
       }
     },
+    keys: async (pattern) => {
+      try {
+        return await localClient.keys(pattern);
+      } catch (err) {
+        return [];
+      }
+    },
     ping: async () => localClient.ping(),
   };
 } else {

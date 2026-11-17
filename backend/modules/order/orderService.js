@@ -155,10 +155,13 @@ class OrderService {
         orderStatus: 'pending',
       });
 
-      // 6. Decoupled cache invalidation via generic cache service (No product module dependency)
+      // 6. Cache Invalidation upon Order Creation (Stock deducted/reserved):
+      // Purges both individual product caches and catalog list caches (Redis + ETag)
       for (const r of reservedItems) {
         cacheService.del(`product:${r.product}`).catch(() => {});
       }
+      cacheService.delByPattern('products:list:*').catch(() => {});
+      console.log(`🧹 [OrderService] Cache & ETag invalidated for products [${reservedItems.map((r) => r.product).join(', ')}] on order creation #${order._id}`);
 
       // 7. Real-time notification via Socket.io
       if (global.io) {
@@ -221,9 +224,13 @@ class OrderService {
             releaseStock(String(item.product), item.quantity, String(currentOrder._id))
           )
         );
+        // Cache Invalidation upon Order Cancellation/Rejection (Stock restored to warehouse):
+        // Purges both individual product caches and catalog list caches (Redis + ETag)
         for (const item of currentOrder.orderItems) {
           cacheService.del(`product:${item.product}`).catch(() => {});
         }
+        cacheService.delByPattern('products:list:*').catch(() => {});
+        console.log(`🧹 [OrderService] Cache & ETag invalidated for products on order #${orderId} (${orderStatus})`);
       } catch (err) {
         throw new ApiError('Failed to return stock to warehouse: Inventory service unavailable', 503);
       }
