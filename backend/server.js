@@ -5,7 +5,6 @@ const mongoose = require("mongoose");
 const http = require("http");
 const app = require("./app");
 const logger = require("./utils/logger");
-const { initSocketServer } = require("./socket/socket");
 
 // ------------------------------------------------------
 // Load environment variables
@@ -30,18 +29,16 @@ if (mongoose.connection.readyState === 0) {
 }
 
 // ------------------------------------------------------
-// Create raw HTTP server & Socket.IO
+// Create raw HTTP server
 // ------------------------------------------------------
 const httpServer = http.createServer(app);
-const io = initSocketServer(httpServer);
-global.io = io; // Used across controllers via global.io
 
 // ------------------------------------------------------
 // Start server locally (Skipped on Vercel Serverless)
 // ------------------------------------------------------
 const PORT = process.env.PORT || 8000;
 
-app.listen(PORT, '0.0.0.0', () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 

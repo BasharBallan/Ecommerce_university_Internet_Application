@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
@@ -14,6 +15,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { getPusherClient } from "../../apiServices/pusherClient";
+import { getToken } from "../../apiServices/cookie";
 import { useOrderDetails } from "./OrderService";
 import type { OrderStatus } from "./types";
 
@@ -58,8 +62,49 @@ const formatDate = (date: string) => {
 export default function OrderDetailsPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [realtimeAlert, setRealtimeAlert] = useState<string | null>(null);
 
   const { data: order, isLoading, isError, error, refetch } = useOrderDetails(orderId);
+
+  // Requirement: Customer sees order status change in real time (e.g. when admin approves) without reload.
+  // Channel: private-order-${orderId} (Secured via Soketi auth endpoint so no other customer can track it)
+  useEffect(() => {
+    if (!orderId) return;
+    const token = getToken();
+    if (!token) return;
+
+    const pusher = getPusherClient();
+    const orderChannel = pusher.subscribe(`private-order-${orderId}`);
+
+    orderChannel.bind("ORDER_STATUS_UPDATED", (payload: any) => {
+      console.log("⚡ [Soketi/Customer] Order status updated:", payload);
+      if (String(payload.orderId) === String(orderId)) {
+        queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+        if (payload.subType === "EMAIL_DELIVERY_FAILED" || payload.message?.includes("تعذر") || payload.message?.includes("مشكلة")) {
+          setRealtimeAlert(`⚠️ تنبيه: هناك مشكلة في بريدك الإلكتروني (${payload.userEmail || ""}) لم نستطع إيجاده وإرسال البريد إليه؛ تم إلغاء الطلب واسترجاع الكمية المحجوزة للمستودع.`);
+        } else {
+          setRealtimeAlert(`⚡ Live Update: Order status changed to "${payload.orderStatus}"`);
+        }
+      }
+    });
+
+    orderChannel.bind("EMAIL_DELIVERY_FAILED", (payload: any) => {
+      console.log("⚠️ [Soketi/Customer] Email delivery failure received:", payload);
+      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      setRealtimeAlert(payload.message || "⚠️ تنبيه: هناك مشكلة في بريدك الإلكتروني لم نستطع إيجاده وإرسال البريد إليه؛ تم إلغاء الطلب واسترجاع الكميات.");
+    });
+
+    orderChannel.bind("pusher:subscription_error", (status: any) => {
+      console.warn("⛔ [Soketi/Customer] Subscription error:", status);
+    });
+
+    return () => {
+      orderChannel.unbind_all();
+      pusher.unsubscribe(`private-order-${orderId}`);
+      pusher.disconnect();
+    };
+  }, [orderId, queryClient]);
 
   if (isLoading) {
     return (
@@ -122,6 +167,17 @@ export default function OrderDetailsPage() {
               Back to My Orders
             </Button>
           </Box>
+
+          {/* Real-time Order Update Alert */}
+          {realtimeAlert && (
+            <Alert
+              severity={realtimeAlert.includes("⚠️") ? "error" : "success"}
+              onClose={() => setRealtimeAlert(null)}
+              sx={{ width: "100%", borderRadius: 2, fontWeight: 500 }}
+            >
+              {realtimeAlert}
+            </Alert>
+          )}
 
           {/* Order header */}
           <Card variant="outlined" sx={{ borderRadius: 3 }}>
